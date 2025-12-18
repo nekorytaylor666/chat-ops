@@ -1,0 +1,30 @@
+{
+  "name": "@chat-ops/api",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "type": "module",
+  "scripts": {},
+  "devDependencies": {
+    "typescript": "catalog:",
+    "@chat-ops/config": "workspace:*"
+  },
+  "dependencies": {
+    "@trpc/server": "catalog:",
+    "@trpc/client": "catalog:",
+    "hono": "catalog:",
+    "drizzle-orm": "catalog:",
+    "@types/pg": "catalog:",
+    "ai": "catalog:",
+    "@ai-sdk/google": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:",
+    "@chat-ops/auth": "workspace:*",
+    "@chat-ops/db": "workspace:*"
+  }
+}

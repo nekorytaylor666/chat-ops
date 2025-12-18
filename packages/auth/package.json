@@ -1,0 +1,24 @@
+{
+  "name": "@chat-ops/auth",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "type": "module",
+  "scripts": {},
+  "devDependencies": {
+    "typescript": "catalog:",
+    "@chat-ops/config": "workspace:*"
+  },
+  "dependencies": {
+    "better-auth": "catalog:",
+    "@better-auth/expo": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:",
+    "@chat-ops/db": "workspace:*"
+  }
+}

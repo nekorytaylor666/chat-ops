@@ -1,0 +1,38 @@
+{
+  "name": "chat-ops",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "check": "biome check --write .",
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "check-types": "turbo check-types",
+    "dev:native": "turbo -F native dev",
+    "dev:web": "turbo -F web dev",
+    "dev:server": "turbo -F server dev",
+    "db:push": "turbo -F @chat-ops/db db:push",
+    "db:studio": "turbo -F @chat-ops/db db:studio",
+    "db:generate": "turbo -F @chat-ops/db db:generate",
+    "db:migrate": "turbo -F @chat-ops/db db:migrate",
+    "db:start": "turbo -F @chat-ops/db db:start",
+    "db:watch": "turbo -F @chat-ops/db db:watch",
+    "db:stop": "turbo -F @chat-ops/db db:stop",
+    "db:down": "turbo -F @chat-ops/db db:down"
+  },
+  "dependencies": {
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "turbo": "^2.6.3",
+    "@biomejs/biome": "2.3.10",
+    "ultracite": "6.4.2",
+    "typescript": "catalog:",
+    "@types/bun": "catalog:"
+  },
+  "packageManager": "pnpm@10.24.0"
+}
