@@ -93,6 +93,7 @@ export function AttributeModal({
 }: AttributeModalProps) {
   const addAttribute = useAddAttribute();
   const updateAttribute = useUpdateAttribute();
+
   const isEditing = !!attribute;
 
   const [type, setType] = React.useState<AttributeType>(

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEntityBySlug } from "@/hooks/use-entities";
+
 import { AppearanceTab } from "./appearance-tab";
 import { AttributesTab } from "./attributes-tab";
 import { ConfigurationTab } from "./configuration-tab";
