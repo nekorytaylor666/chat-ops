@@ -3,15 +3,31 @@ import Loader from "@/components/loader";
 import { useWorkspace } from "@/hooks/use-workspace";
 
 interface WorkspaceContextValue {
-  workspaceId: string;
+  workspaceId: string | null;
 }
 
 const WorkspaceContext = React.createContext<WorkspaceContextValue | null>(
   null
 );
 
+function isUnauthorizedError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const err = error as { data?: { code?: string } };
+  return err.data?.code === "UNAUTHORIZED";
+}
+
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const { workspaceId, isLoading, isError, error } = useWorkspace();
+
+  // On auth error, render children anyway (let routes handle redirect)
+  // This allows /login to work without workspace
+  if (isError && isUnauthorizedError(error)) {
+    return (
+      <WorkspaceContext.Provider value={{ workspaceId: null }}>
+        {children}
+      </WorkspaceContext.Provider>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -37,7 +53,13 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   if (!workspaceId) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <Loader />
+        <div className="text-center">
+          <h2 className="font-semibold text-lg">No workspace available</h2>
+          <p className="mt-1 text-muted-foreground text-sm">
+            Unable to create or load a workspace. Please try refreshing the
+            page.
+          </p>
+        </div>
       </div>
     );
   }

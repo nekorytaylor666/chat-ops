@@ -14,7 +14,7 @@ function EntitySlugLayout() {
   const { entitySlug } = useParams({ from: "/entities/$entitySlug" });
   const navigate = useNavigate();
 
-  // Check if we're at the index (no child route) and redirect to settings
+  // Redirect to settings if we're at the entity index
   useEffect(() => {
     const path = window.location.pathname;
     if (path === `/entities/${entitySlug}`) {

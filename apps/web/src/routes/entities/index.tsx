@@ -1,9 +1,4 @@
-import {
-  createFileRoute,
-  Link,
-  Outlet,
-  useMatches,
-} from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Building2, ChevronDown, Plus, Settings2, Upload } from "lucide-react";
 import * as React from "react";
 
@@ -31,22 +26,9 @@ import {
 import { useRecords } from "@/hooks/use-records";
 import { generateColumnsFromAttributes } from "@/lib/columns-from-attributes";
 
-export const Route = createFileRoute("/entities")({
-  component: EntitiesLayout,
+export const Route = createFileRoute("/entities/")({
+  component: EntitiesPage,
 });
-
-function EntitiesLayout() {
-  const matches = useMatches();
-  const hasChildRoute = matches.some((match) =>
-    match.routeId.startsWith("/entities/$")
-  );
-
-  if (hasChildRoute) {
-    return <Outlet />;
-  }
-
-  return <EntitiesPage />;
-}
 
 interface RecordData {
   id: string;
