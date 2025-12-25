@@ -1,16 +1,32 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useMatches } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Building2, Plus } from "lucide-react";
+import { Building2, ChevronDown, Plus, Settings2, Upload } from "lucide-react";
 import * as React from "react";
 
 import { EntityGrid } from "@/components/entity-grid";
+import { PageHeader, PageToolbar } from "@/components/header";
 import { Button } from "@/components/ui/button";
 import { getFilterFn } from "@/lib/data-grid-filters";
 import type { CellSelectOption } from "@/types/data-grid";
 
 export const Route = createFileRoute("/entities")({
-  component: EntitiesPage,
+  component: EntitiesLayout,
 });
+
+function EntitiesLayout() {
+  const matches = useMatches();
+  const hasChildRoute = matches.some((match) =>
+    match.routeId.startsWith("/entities/$")
+  );
+
+  if (hasChildRoute) {
+    return <Outlet />;
+  }
+
+  return <EntitiesPage />;
+}
+
+const ENTITY_SLUG = "companies";
 
 interface Company {
   id: string;
@@ -281,24 +297,59 @@ function EntitiesPage() {
     setData((prev) => prev.filter((item) => !idsToDelete.has(item.id)));
   }, []);
 
+  const toolbarLeft = React.useMemo(
+    () => (
+      <>
+        <Button className="font-normal" size="sm" variant="outline">
+          All Companies
+          <ChevronDown className="text-muted-foreground" />
+        </Button>
+        <Button className="font-normal" size="sm" variant="ghost">
+          <Settings2 className="text-muted-foreground" />
+          View settings
+        </Button>
+      </>
+    ),
+    []
+  );
+
+  const toolbarRight = React.useMemo(
+    () => (
+      <>
+        <Button asChild className="font-normal" size="sm" variant="ghost">
+          <a href={`/entities/${ENTITY_SLUG}/settings`}>
+            <Settings2 className="text-muted-foreground" />
+            Entity Settings
+          </a>
+        </Button>
+        <Button className="font-normal" size="sm" variant="ghost">
+          <Upload className="text-muted-foreground" />
+          Import / Export
+          <ChevronDown className="text-muted-foreground" />
+        </Button>
+        <Button onClick={onRowAdd} size="sm">
+          <Plus />
+          Add Company
+        </Button>
+      </>
+    ),
+    [onRowAdd]
+  );
+
   return (
-    <div className="container mx-auto py-6">
-      <EntityGrid
-        columns={columns}
-        data={data}
-        entityIcon={Building2}
-        entityName="Companies"
-        headerActions={
-          <Button onClick={onRowAdd} size="sm">
-            <Plus />
-            Add Company
-          </Button>
-        }
-        height={600}
-        onDataChange={setData}
-        onRowAdd={onRowAdd}
-        onRowsDelete={onRowsDelete}
-      />
+    <div className="flex h-full flex-col">
+      <PageHeader count={data.length} icon={Building2} title="Companies" />
+      <PageToolbar left={toolbarLeft} right={toolbarRight} />
+      <div className="min-h-0 flex-1 px-4">
+        <EntityGrid
+          columns={columns}
+          compactHeader
+          data={data}
+          onDataChange={setData}
+          onRowAdd={onRowAdd}
+          onRowsDelete={onRowsDelete}
+        />
+      </div>
     </div>
   );
 }

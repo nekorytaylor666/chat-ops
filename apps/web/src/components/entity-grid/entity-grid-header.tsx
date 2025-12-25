@@ -26,6 +26,8 @@ interface EntityGridHeaderProps<TData> {
   onViewSettings?: () => void;
   className?: string;
   children?: React.ReactNode;
+  /** When true, only shows the view settings row (sort/filter) */
+  compact?: boolean;
 }
 
 export function EntityGridHeader<TData>({
@@ -39,6 +41,7 @@ export function EntityGridHeader<TData>({
   onViewSettings,
   className,
   children,
+  compact = false,
 }: EntityGridHeaderProps<TData>) {
   const sorting = table.getState().sorting;
   const columnFilters = table.getState().columnFilters;
@@ -57,6 +60,26 @@ export function EntityGridHeader<TData>({
   }, [sorting, table]);
 
   const activeView = views?.find((v) => v.id === activeViewId);
+
+  if (compact) {
+    return (
+      <div className={cn("flex items-center gap-2 py-2", className)}>
+        <DataGridSortMenu table={table} />
+        <DataGridFilterMenu
+          disabled={
+            columnFilters.length === 0 &&
+            !table.getAllColumns().some((c) => c.getCanFilter())
+          }
+          table={table}
+        />
+        {sortedByLabel && (
+          <span className="text-muted-foreground text-sm">
+            Sorted by: <span className="text-foreground">{sortedByLabel}</span>
+          </span>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={cn("flex flex-col gap-3 py-3", className)}>

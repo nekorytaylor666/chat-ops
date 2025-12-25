@@ -53,6 +53,8 @@ interface EntityGridProps<TData> {
   entityIcon?: React.ElementType;
   entityCount?: number;
   showHeader?: boolean;
+  /** When true, only shows the view settings row (sort/filter) */
+  compactHeader?: boolean;
   views?: Array<{ id: string; name: string }>;
   activeViewId?: string;
   onViewChange?: (viewId: string) => void;
@@ -85,6 +87,7 @@ export function EntityGrid<TData>({
   entityIcon,
   entityCount,
   showHeader = true,
+  compactHeader = false,
   views,
   activeViewId,
   onViewChange,
@@ -124,6 +127,7 @@ export function EntityGrid<TData>({
       {showHeader && (
         <EntityGridHeader
           activeViewId={activeViewId}
+          compact={compactHeader}
           entityCount={displayCount}
           entityIcon={entityIcon}
           entityName={entityName}
