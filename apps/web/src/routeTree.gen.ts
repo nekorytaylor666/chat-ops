@@ -15,6 +15,7 @@ import { Route as EntitiesRouteRouteImport } from './routes/entities/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EntitiesIndexRouteImport } from './routes/entities/index'
 import { Route as EntitiesEntitySlugRouteRouteImport } from './routes/entities/$entitySlug/route'
+import { Route as EntitiesEntitySlugIndexRouteImport } from './routes/entities/$entitySlug/index'
 import { Route as EntitiesEntitySlugSettingsRouteRouteImport } from './routes/entities/$entitySlug/settings/route'
 
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -47,6 +48,11 @@ const EntitiesEntitySlugRouteRoute = EntitiesEntitySlugRouteRouteImport.update({
   path: '/$entitySlug',
   getParentRoute: () => EntitiesRouteRoute,
 } as any)
+const EntitiesEntitySlugIndexRoute = EntitiesEntitySlugIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => EntitiesEntitySlugRouteRoute,
+} as any)
 const EntitiesEntitySlugSettingsRouteRoute =
   EntitiesEntitySlugSettingsRouteRouteImport.update({
     id: '/settings',
@@ -62,14 +68,15 @@ export interface FileRoutesByFullPath {
   '/entities/$entitySlug': typeof EntitiesEntitySlugRouteRouteWithChildren
   '/entities/': typeof EntitiesIndexRoute
   '/entities/$entitySlug/settings': typeof EntitiesEntitySlugSettingsRouteRoute
+  '/entities/$entitySlug/': typeof EntitiesEntitySlugIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
-  '/entities/$entitySlug': typeof EntitiesEntitySlugRouteRouteWithChildren
   '/entities': typeof EntitiesIndexRoute
   '/entities/$entitySlug/settings': typeof EntitiesEntitySlugSettingsRouteRoute
+  '/entities/$entitySlug': typeof EntitiesEntitySlugIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +87,7 @@ export interface FileRoutesById {
   '/entities/$entitySlug': typeof EntitiesEntitySlugRouteRouteWithChildren
   '/entities/': typeof EntitiesIndexRoute
   '/entities/$entitySlug/settings': typeof EntitiesEntitySlugSettingsRouteRoute
+  '/entities/$entitySlug/': typeof EntitiesEntitySlugIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,14 +99,15 @@ export interface FileRouteTypes {
     | '/entities/$entitySlug'
     | '/entities/'
     | '/entities/$entitySlug/settings'
+    | '/entities/$entitySlug/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
     | '/onboarding'
-    | '/entities/$entitySlug'
     | '/entities'
     | '/entities/$entitySlug/settings'
+    | '/entities/$entitySlug'
   id:
     | '__root__'
     | '/'
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/entities/$entitySlug'
     | '/entities/'
     | '/entities/$entitySlug/settings'
+    | '/entities/$entitySlug/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -161,6 +171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EntitiesEntitySlugRouteRouteImport
       parentRoute: typeof EntitiesRouteRoute
     }
+    '/entities/$entitySlug/': {
+      id: '/entities/$entitySlug/'
+      path: '/'
+      fullPath: '/entities/$entitySlug/'
+      preLoaderRoute: typeof EntitiesEntitySlugIndexRouteImport
+      parentRoute: typeof EntitiesEntitySlugRouteRoute
+    }
     '/entities/$entitySlug/settings': {
       id: '/entities/$entitySlug/settings'
       path: '/settings'
@@ -173,11 +190,13 @@ declare module '@tanstack/react-router' {
 
 interface EntitiesEntitySlugRouteRouteChildren {
   EntitiesEntitySlugSettingsRouteRoute: typeof EntitiesEntitySlugSettingsRouteRoute
+  EntitiesEntitySlugIndexRoute: typeof EntitiesEntitySlugIndexRoute
 }
 
 const EntitiesEntitySlugRouteRouteChildren: EntitiesEntitySlugRouteRouteChildren =
   {
     EntitiesEntitySlugSettingsRouteRoute: EntitiesEntitySlugSettingsRouteRoute,
+    EntitiesEntitySlugIndexRoute: EntitiesEntitySlugIndexRoute,
   }
 
 const EntitiesEntitySlugRouteRouteWithChildren =
