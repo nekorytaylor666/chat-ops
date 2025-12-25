@@ -9,7 +9,7 @@ import {
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
-import { workspace } from "./workspace";
+import { organization } from "./organization";
 
 export const attributeTypeEnum = pgEnum("attribute_type", [
   "short-text",
@@ -28,9 +28,9 @@ export const entityDefinition = pgTable(
     id: text("id")
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    workspaceId: text("workspace_id")
+    organizationId: text("organization_id")
       .notNull()
-      .references(() => workspace.id, { onDelete: "cascade" }),
+      .references(() => organization.id, { onDelete: "cascade" }),
     slug: text("slug").notNull(),
     singularName: text("singular_name").notNull(),
     pluralName: text("plural_name").notNull(),
@@ -44,8 +44,8 @@ export const entityDefinition = pgTable(
       .notNull(),
   },
   (table) => [
-    index("entity_definition_workspace_idx").on(table.workspaceId),
-    index("entity_definition_slug_idx").on(table.workspaceId, table.slug),
+    index("entity_definition_organization_idx").on(table.organizationId),
+    index("entity_definition_slug_idx").on(table.organizationId, table.slug),
   ]
 );
 
@@ -102,9 +102,9 @@ export const entityRecord = pgTable(
 export const entityDefinitionRelations = relations(
   entityDefinition,
   ({ one, many }) => ({
-    workspace: one(workspace, {
-      fields: [entityDefinition.workspaceId],
-      references: [workspace.id],
+    organization: one(organization, {
+      fields: [entityDefinition.organizationId],
+      references: [organization.id],
     }),
     attributes: many(attribute),
     records: many(entityRecord),

@@ -1,12 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
-import { useWorkspaceContext } from "@/contexts/workspace-context";
+import { useOrganizationContext } from "@/contexts/workspace-context";
 import { useTRPC } from "@/utils/trpc";
 
 export function useEntities() {
   const trpc = useTRPC();
-  const { workspaceId } = useWorkspaceContext();
+  const { organizationId } = useOrganizationContext();
 
-  return useQuery(trpc.entity.list.queryOptions({ workspaceId }));
+  return useQuery(
+    trpc.entity.list.queryOptions(
+      { organizationId: organizationId ?? "" },
+      { enabled: Boolean(organizationId) }
+    )
+  );
 }
 
 export function useEntity(entityId: string) {
@@ -22,12 +27,12 @@ export function useEntity(entityId: string) {
 
 export function useEntityBySlug(slug: string) {
   const trpc = useTRPC();
-  const { workspaceId } = useWorkspaceContext();
+  const { organizationId } = useOrganizationContext();
 
   return useQuery(
     trpc.entity.getBySlug.queryOptions(
-      { workspaceId, slug },
-      { enabled: Boolean(slug) }
+      { organizationId: organizationId ?? "", slug },
+      { enabled: Boolean(slug) && Boolean(organizationId) }
     )
   );
 }

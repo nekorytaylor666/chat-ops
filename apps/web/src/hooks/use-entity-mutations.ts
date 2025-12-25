@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useWorkspaceContext } from "@/contexts/workspace-context";
+import { useOrganizationContext } from "@/contexts/workspace-context";
 import { useTRPC } from "@/utils/trpc";
 
 type Entity = NonNullable<
@@ -16,22 +16,24 @@ type Attribute = NonNullable<Entity["attributes"]>[number];
 export function useCreateEntity() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const { workspaceId } = useWorkspaceContext();
+  const { organizationId } = useOrganizationContext();
 
   return useMutation(
     trpc.entity.create.mutationOptions({
       onMutate: async (newEntity) => {
         await queryClient.cancelQueries({
-          queryKey: trpc.entity.list.queryKey({ workspaceId }),
+          queryKey: trpc.entity.list.queryKey({
+            organizationId: organizationId ?? "",
+          }),
         });
 
         const previousEntities = queryClient.getQueryData<Entity[]>(
-          trpc.entity.list.queryKey({ workspaceId })
+          trpc.entity.list.queryKey({ organizationId: organizationId ?? "" })
         );
 
         const optimisticEntity: Entity = {
           id: `temp-${Date.now()}`,
-          workspaceId,
+          organizationId: organizationId ?? "",
           slug: newEntity.singularName.toLowerCase().replace(/\s+/g, "-"),
           singularName: newEntity.singularName,
           pluralName: newEntity.pluralName,
@@ -44,7 +46,7 @@ export function useCreateEntity() {
         };
 
         queryClient.setQueryData<Entity[]>(
-          trpc.entity.list.queryKey({ workspaceId }),
+          trpc.entity.list.queryKey({ organizationId: organizationId ?? "" }),
           (old) => [...(old ?? []), optimisticEntity]
         );
 
@@ -53,7 +55,7 @@ export function useCreateEntity() {
       onError: (_err, _newEntity, context) => {
         if (context?.previousEntities) {
           queryClient.setQueryData(
-            trpc.entity.list.queryKey({ workspaceId }),
+            trpc.entity.list.queryKey({ organizationId: organizationId ?? "" }),
             context.previousEntities
           );
         }
@@ -61,7 +63,9 @@ export function useCreateEntity() {
       },
       onSettled: () => {
         queryClient.invalidateQueries({
-          queryKey: trpc.entity.list.queryKey({ workspaceId }),
+          queryKey: trpc.entity.list.queryKey({
+            organizationId: organizationId ?? "",
+          }),
         });
       },
     })
@@ -71,21 +75,23 @@ export function useCreateEntity() {
 export function useUpdateEntity() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const { workspaceId } = useWorkspaceContext();
+  const { organizationId } = useOrganizationContext();
 
   return useMutation(
     trpc.entity.update.mutationOptions({
       onMutate: async (updates) => {
         await queryClient.cancelQueries({
-          queryKey: trpc.entity.list.queryKey({ workspaceId }),
+          queryKey: trpc.entity.list.queryKey({
+            organizationId: organizationId ?? "",
+          }),
         });
 
         const previousEntities = queryClient.getQueryData<Entity[]>(
-          trpc.entity.list.queryKey({ workspaceId })
+          trpc.entity.list.queryKey({ organizationId: organizationId ?? "" })
         );
 
         queryClient.setQueryData<Entity[]>(
-          trpc.entity.list.queryKey({ workspaceId }),
+          trpc.entity.list.queryKey({ organizationId: organizationId ?? "" }),
           (old) =>
             old?.map((entity) =>
               entity.id === updates.entityId
@@ -99,7 +105,7 @@ export function useUpdateEntity() {
       onError: (_err, _updates, context) => {
         if (context?.previousEntities) {
           queryClient.setQueryData(
-            trpc.entity.list.queryKey({ workspaceId }),
+            trpc.entity.list.queryKey({ organizationId: organizationId ?? "" }),
             context.previousEntities
           );
         }
@@ -107,7 +113,9 @@ export function useUpdateEntity() {
       },
       onSettled: (_data, _error, variables) => {
         queryClient.invalidateQueries({
-          queryKey: trpc.entity.list.queryKey({ workspaceId }),
+          queryKey: trpc.entity.list.queryKey({
+            organizationId: organizationId ?? "",
+          }),
         });
         queryClient.invalidateQueries({
           queryKey: trpc.entity.getById.queryKey({
@@ -122,21 +130,23 @@ export function useUpdateEntity() {
 export function useDeleteEntity() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const { workspaceId } = useWorkspaceContext();
+  const { organizationId } = useOrganizationContext();
 
   return useMutation(
     trpc.entity.delete.mutationOptions({
       onMutate: async ({ entityId }) => {
         await queryClient.cancelQueries({
-          queryKey: trpc.entity.list.queryKey({ workspaceId }),
+          queryKey: trpc.entity.list.queryKey({
+            organizationId: organizationId ?? "",
+          }),
         });
 
         const previousEntities = queryClient.getQueryData<Entity[]>(
-          trpc.entity.list.queryKey({ workspaceId })
+          trpc.entity.list.queryKey({ organizationId: organizationId ?? "" })
         );
 
         queryClient.setQueryData<Entity[]>(
-          trpc.entity.list.queryKey({ workspaceId }),
+          trpc.entity.list.queryKey({ organizationId: organizationId ?? "" }),
           (old) => old?.filter((entity) => entity.id !== entityId)
         );
 
@@ -145,7 +155,7 @@ export function useDeleteEntity() {
       onError: (_err, _variables, context) => {
         if (context?.previousEntities) {
           queryClient.setQueryData(
-            trpc.entity.list.queryKey({ workspaceId }),
+            trpc.entity.list.queryKey({ organizationId: organizationId ?? "" }),
             context.previousEntities
           );
         }
@@ -153,7 +163,9 @@ export function useDeleteEntity() {
       },
       onSettled: () => {
         queryClient.invalidateQueries({
-          queryKey: trpc.entity.list.queryKey({ workspaceId }),
+          queryKey: trpc.entity.list.queryKey({
+            organizationId: organizationId ?? "",
+          }),
         });
       },
     })
@@ -163,17 +175,19 @@ export function useDeleteEntity() {
 export function useAddAttribute() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const { workspaceId } = useWorkspaceContext();
+  const { organizationId } = useOrganizationContext();
 
   return useMutation(
     trpc.entity.addAttribute.mutationOptions({
       onMutate: async (newAttr) => {
         await queryClient.cancelQueries({
-          queryKey: trpc.entity.list.queryKey({ workspaceId }),
+          queryKey: trpc.entity.list.queryKey({
+            organizationId: organizationId ?? "",
+          }),
         });
 
         const previousEntities = queryClient.getQueryData<Entity[]>(
-          trpc.entity.list.queryKey({ workspaceId })
+          trpc.entity.list.queryKey({ organizationId: organizationId ?? "" })
         );
 
         const optimisticAttr: Attribute = {
@@ -194,7 +208,7 @@ export function useAddAttribute() {
         };
 
         queryClient.setQueryData<Entity[]>(
-          trpc.entity.list.queryKey({ workspaceId }),
+          trpc.entity.list.queryKey({ organizationId: organizationId ?? "" }),
           (old) =>
             old?.map((entity) =>
               entity.id === newAttr.entityDefinitionId
@@ -212,7 +226,7 @@ export function useAddAttribute() {
       onError: (_err, _newAttr, context) => {
         if (context?.previousEntities) {
           queryClient.setQueryData(
-            trpc.entity.list.queryKey({ workspaceId }),
+            trpc.entity.list.queryKey({ organizationId: organizationId ?? "" }),
             context.previousEntities
           );
         }
@@ -220,7 +234,9 @@ export function useAddAttribute() {
       },
       onSettled: (_data, _error, variables) => {
         queryClient.invalidateQueries({
-          queryKey: trpc.entity.list.queryKey({ workspaceId }),
+          queryKey: trpc.entity.list.queryKey({
+            organizationId: organizationId ?? "",
+          }),
         });
         queryClient.invalidateQueries({
           queryKey: trpc.entity.getById.queryKey({
@@ -235,21 +251,23 @@ export function useAddAttribute() {
 export function useUpdateAttribute() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const { workspaceId } = useWorkspaceContext();
+  const { organizationId } = useOrganizationContext();
 
   return useMutation(
     trpc.entity.updateAttribute.mutationOptions({
       onMutate: async (updates) => {
         await queryClient.cancelQueries({
-          queryKey: trpc.entity.list.queryKey({ workspaceId }),
+          queryKey: trpc.entity.list.queryKey({
+            organizationId: organizationId ?? "",
+          }),
         });
 
         const previousEntities = queryClient.getQueryData<Entity[]>(
-          trpc.entity.list.queryKey({ workspaceId })
+          trpc.entity.list.queryKey({ organizationId: organizationId ?? "" })
         );
 
         queryClient.setQueryData<Entity[]>(
-          trpc.entity.list.queryKey({ workspaceId }),
+          trpc.entity.list.queryKey({ organizationId: organizationId ?? "" }),
           (old) =>
             old?.map((entity) => ({
               ...entity,
@@ -266,7 +284,7 @@ export function useUpdateAttribute() {
       onError: (_err, _updates, context) => {
         if (context?.previousEntities) {
           queryClient.setQueryData(
-            trpc.entity.list.queryKey({ workspaceId }),
+            trpc.entity.list.queryKey({ organizationId: organizationId ?? "" }),
             context.previousEntities
           );
         }
@@ -274,7 +292,9 @@ export function useUpdateAttribute() {
       },
       onSettled: () => {
         queryClient.invalidateQueries({
-          queryKey: trpc.entity.list.queryKey({ workspaceId }),
+          queryKey: trpc.entity.list.queryKey({
+            organizationId: organizationId ?? "",
+          }),
         });
       },
     })
@@ -284,21 +304,23 @@ export function useUpdateAttribute() {
 export function useDeleteAttribute() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const { workspaceId } = useWorkspaceContext();
+  const { organizationId } = useOrganizationContext();
 
   return useMutation(
     trpc.entity.deleteAttribute.mutationOptions({
       onMutate: async ({ attributeId }) => {
         await queryClient.cancelQueries({
-          queryKey: trpc.entity.list.queryKey({ workspaceId }),
+          queryKey: trpc.entity.list.queryKey({
+            organizationId: organizationId ?? "",
+          }),
         });
 
         const previousEntities = queryClient.getQueryData<Entity[]>(
-          trpc.entity.list.queryKey({ workspaceId })
+          trpc.entity.list.queryKey({ organizationId: organizationId ?? "" })
         );
 
         queryClient.setQueryData<Entity[]>(
-          trpc.entity.list.queryKey({ workspaceId }),
+          trpc.entity.list.queryKey({ organizationId: organizationId ?? "" }),
           (old) =>
             old?.map((entity) => ({
               ...entity,
@@ -313,7 +335,7 @@ export function useDeleteAttribute() {
       onError: (_err, _variables, context) => {
         if (context?.previousEntities) {
           queryClient.setQueryData(
-            trpc.entity.list.queryKey({ workspaceId }),
+            trpc.entity.list.queryKey({ organizationId: organizationId ?? "" }),
             context.previousEntities
           );
         }
@@ -321,7 +343,9 @@ export function useDeleteAttribute() {
       },
       onSettled: () => {
         queryClient.invalidateQueries({
-          queryKey: trpc.entity.list.queryKey({ workspaceId }),
+          queryKey: trpc.entity.list.queryKey({
+            organizationId: organizationId ?? "",
+          }),
         });
       },
     })
@@ -331,21 +355,23 @@ export function useDeleteAttribute() {
 export function useReorderAttributes() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const { workspaceId } = useWorkspaceContext();
+  const { organizationId } = useOrganizationContext();
 
   return useMutation(
     trpc.entity.reorderAttributes.mutationOptions({
       onMutate: async ({ entityDefinitionId, orderedIds }) => {
         await queryClient.cancelQueries({
-          queryKey: trpc.entity.list.queryKey({ workspaceId }),
+          queryKey: trpc.entity.list.queryKey({
+            organizationId: organizationId ?? "",
+          }),
         });
 
         const previousEntities = queryClient.getQueryData<Entity[]>(
-          trpc.entity.list.queryKey({ workspaceId })
+          trpc.entity.list.queryKey({ organizationId: organizationId ?? "" })
         );
 
         queryClient.setQueryData<Entity[]>(
-          trpc.entity.list.queryKey({ workspaceId }),
+          trpc.entity.list.queryKey({ organizationId: organizationId ?? "" }),
           (old) =>
             old?.map((entity) => {
               if (entity.id !== entityDefinitionId) return entity;
@@ -370,7 +396,7 @@ export function useReorderAttributes() {
       onError: (_err, _variables, context) => {
         if (context?.previousEntities) {
           queryClient.setQueryData(
-            trpc.entity.list.queryKey({ workspaceId }),
+            trpc.entity.list.queryKey({ organizationId: organizationId ?? "" }),
             context.previousEntities
           );
         }
@@ -378,7 +404,9 @@ export function useReorderAttributes() {
       },
       onSettled: (_data, _error, variables) => {
         queryClient.invalidateQueries({
-          queryKey: trpc.entity.list.queryKey({ workspaceId }),
+          queryKey: trpc.entity.list.queryKey({
+            organizationId: organizationId ?? "",
+          }),
         });
         queryClient.invalidateQueries({
           queryKey: trpc.entity.getById.queryKey({

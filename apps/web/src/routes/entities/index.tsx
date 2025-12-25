@@ -160,10 +160,6 @@ function EntitiesPage() {
     [localData, updateRecord]
   );
 
-  const handleCreateEntity = React.useCallback(() => {
-    // TODO: Open entity creation modal
-  }, []);
-
   // Loading state
   if (entitiesLoading) {
     return (
@@ -184,7 +180,7 @@ function EntitiesPage() {
   if (!entities || entities.length === 0) {
     return (
       <div className="flex h-full flex-col">
-        <EmptyEntitiesState onCreateEntity={handleCreateEntity} />
+        <EmptyEntitiesState />
       </div>
     );
   }
@@ -192,7 +188,7 @@ function EntitiesPage() {
   if (!currentEntity) {
     return (
       <div className="flex h-full flex-col">
-        <EmptyEntitiesState onCreateEntity={handleCreateEntity} />
+        <EmptyEntitiesState />
       </div>
     );
   }

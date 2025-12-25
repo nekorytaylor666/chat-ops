@@ -1,18 +1,13 @@
-import {
-  db,
-  entityDefinition,
-  entityRecord,
-  workspaceMember,
-} from "@chat-ops/db";
+import { db, entityDefinition, entityRecord, member } from "@chat-ops/db";
 import { TRPCError } from "@trpc/server";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { protectedProcedure, router } from "../index";
 
-async function requireWorkspaceAccessForEntity(
+async function requireOrganizationAccessForEntity(
   entityDefinitionId: string,
   userId: string,
-  allowedRoles: ("owner" | "admin" | "member" | "viewer")[]
+  allowedRoles: ("owner" | "admin" | "member")[]
 ) {
   const entity = await db.query.entityDefinition.findFirst({
     where: eq(entityDefinition.id, entityDefinitionId),
@@ -21,25 +16,30 @@ async function requireWorkspaceAccessForEntity(
     throw new TRPCError({ code: "NOT_FOUND", message: "Entity not found" });
   }
 
-  const member = await db.query.workspaceMember.findFirst({
+  const orgMember = await db.query.member.findFirst({
     where: and(
-      eq(workspaceMember.workspaceId, entity.workspaceId),
-      eq(workspaceMember.userId, userId)
+      eq(member.organizationId, entity.organizationId),
+      eq(member.userId, userId)
     ),
   });
-  if (!(member && allowedRoles.includes(member.role))) {
+  if (
+    !(
+      orgMember &&
+      allowedRoles.includes(orgMember.role as "owner" | "admin" | "member")
+    )
+  ) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "You do not have permission to perform this action",
     });
   }
-  return { entity, role: member.role };
+  return { entity, role: orgMember.role };
 }
 
 async function getRecordWithAccess(
   recordId: string,
   userId: string,
-  allowedRoles: ("owner" | "admin" | "member" | "viewer")[]
+  allowedRoles: ("owner" | "admin" | "member")[]
 ) {
   const record = await db.query.entityRecord.findFirst({
     where: eq(entityRecord.id, recordId),
@@ -48,7 +48,7 @@ async function getRecordWithAccess(
     throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
   }
 
-  await requireWorkspaceAccessForEntity(
+  await requireOrganizationAccessForEntity(
     record.entityDefinitionId,
     userId,
     allowedRoles
@@ -68,10 +68,10 @@ export const recordRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
-      await requireWorkspaceAccessForEntity(
+      await requireOrganizationAccessForEntity(
         input.entityDefinitionId,
         ctx.session.user.id,
-        ["owner", "admin", "member", "viewer"]
+        ["owner", "admin", "member"]
       );
 
       const orderBy =
@@ -96,7 +96,6 @@ export const recordRouter = router({
         "owner",
         "admin",
         "member",
-        "viewer",
       ])
     ),
 
@@ -108,7 +107,7 @@ export const recordRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      await requireWorkspaceAccessForEntity(
+      await requireOrganizationAccessForEntity(
         input.entityDefinitionId,
         ctx.session.user.id,
         ["owner", "admin", "member"]
@@ -203,7 +202,7 @@ export const recordRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
       }
 
-      await requireWorkspaceAccessForEntity(
+      await requireOrganizationAccessForEntity(
         firstRecord.entityDefinitionId,
         ctx.session.user.id,
         ["owner", "admin", "member"]

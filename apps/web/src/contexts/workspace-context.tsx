@@ -1,31 +1,77 @@
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import Loader from "@/components/loader";
-import { useWorkspace } from "@/hooks/use-workspace";
+import { authClient } from "@/lib/auth-client";
 
-interface WorkspaceContextValue {
-  workspaceId: string | null;
+interface OrganizationContextValue {
+  organizationId: string | null;
 }
 
-const WorkspaceContext = React.createContext<WorkspaceContextValue | null>(
-  null
-);
+const OrganizationContext =
+  React.createContext<OrganizationContextValue | null>(null);
 
-function isUnauthorizedError(error: unknown): boolean {
-  if (!error || typeof error !== "object") return false;
-  const err = error as { data?: { code?: string } };
-  return err.data?.code === "UNAUTHORIZED";
-}
+export function OrganizationProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { data: activeOrg, isPending: isActiveOrgPending } =
+    authClient.useActiveOrganization();
+  const { data: organizations, isPending: isOrgsLoading } =
+    authClient.useListOrganizations();
+  const { data: session, isPending: isSessionLoading } =
+    authClient.useSession();
 
-export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
-  const { workspaceId, isLoading, isError, error } = useWorkspace();
+  const isLoading = isActiveOrgPending || isOrgsLoading || isSessionLoading;
+  const isOnboardingPage = location.pathname === "/onboarding";
+  const isLoginPage = location.pathname === "/login";
 
-  // On auth error, render children anyway (let routes handle redirect)
-  // This allows /login to work without workspace
-  if (isError && isUnauthorizedError(error)) {
+  // Set active organization if none is set but organizations exist
+  React.useEffect(() => {
+    if (!isLoading && session && !activeOrg && organizations?.length) {
+      authClient.organization.setActive({
+        organizationId: organizations[0].id,
+      });
+    }
+  }, [isLoading, session, activeOrg, organizations]);
+
+  // Redirect to onboarding if logged in but no organizations exist
+  React.useEffect(() => {
+    if (
+      !isLoading &&
+      session &&
+      !organizations?.length &&
+      !isOnboardingPage &&
+      !isLoginPage
+    ) {
+      navigate({ to: "/onboarding" });
+    }
+  }, [
+    isLoading,
+    session,
+    organizations,
+    isOnboardingPage,
+    isLoginPage,
+    navigate,
+  ]);
+
+  // Allow login and onboarding pages to render without waiting for auth
+  if (isLoginPage || isOnboardingPage) {
     return (
-      <WorkspaceContext.Provider value={{ workspaceId: null }}>
+      <OrganizationContext.Provider value={{ organizationId: null }}>
         {children}
-      </WorkspaceContext.Provider>
+      </OrganizationContext.Provider>
+    );
+  }
+
+  // If not logged in, render children (let routes handle redirect)
+  if (!(isLoading || session)) {
+    return (
+      <OrganizationContext.Provider value={{ organizationId: null }}>
+        {children}
+      </OrganizationContext.Provider>
     );
   }
 
@@ -37,46 +83,34 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (isError) {
+  // Show loader while redirecting to onboarding
+  if (!(activeOrg || organizations?.length)) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <h2 className="font-semibold text-lg">Failed to load workspace</h2>
-          <p className="mt-1 text-muted-foreground text-sm">
-            {error?.message ?? "An unexpected error occurred"}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!workspaceId) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <h2 className="font-semibold text-lg">No workspace available</h2>
-          <p className="mt-1 text-muted-foreground text-sm">
-            Unable to create or load a workspace. Please try refreshing the
-            page.
-          </p>
-        </div>
+        <Loader />
       </div>
     );
   }
 
   return (
-    <WorkspaceContext.Provider value={{ workspaceId }}>
+    <OrganizationContext.Provider
+      value={{ organizationId: activeOrg?.id ?? null }}
+    >
       {children}
-    </WorkspaceContext.Provider>
+    </OrganizationContext.Provider>
   );
 }
 
-export function useWorkspaceContext(): WorkspaceContextValue {
-  const context = React.useContext(WorkspaceContext);
+export function useOrganizationContext(): OrganizationContextValue {
+  const context = React.useContext(OrganizationContext);
   if (!context) {
     throw new Error(
-      "useWorkspaceContext must be used within WorkspaceProvider"
+      "useOrganizationContext must be used within OrganizationProvider"
     );
   }
   return context;
 }
+
+// Backward compatibility aliases
+export const WorkspaceProvider = OrganizationProvider;
+export const useWorkspaceContext = useOrganizationContext;

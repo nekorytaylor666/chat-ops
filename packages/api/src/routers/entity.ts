@@ -1,4 +1,4 @@
-import { attribute, db, entityDefinition, workspaceMember } from "@chat-ops/db";
+import { attribute, db, entityDefinition, member } from "@chat-ops/db";
 import { TRPCError } from "@trpc/server";
 import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
@@ -11,27 +11,32 @@ function generateSlug(name: string): string {
     .replace(/^-|-$/g, "");
 }
 
-async function requireWorkspaceAccess(
-  workspaceId: string,
+async function requireOrganizationAccess(
+  organizationId: string,
   userId: string,
-  allowedRoles: ("owner" | "admin" | "member" | "viewer")[]
+  allowedRoles: ("owner" | "admin" | "member")[]
 ) {
-  const member = await db.query.workspaceMember.findFirst({
+  const orgMember = await db.query.member.findFirst({
     where: and(
-      eq(workspaceMember.workspaceId, workspaceId),
-      eq(workspaceMember.userId, userId)
+      eq(member.organizationId, organizationId),
+      eq(member.userId, userId)
     ),
   });
-  if (!(member && allowedRoles.includes(member.role))) {
+  if (
+    !(
+      orgMember &&
+      allowedRoles.includes(orgMember.role as "owner" | "admin" | "member")
+    )
+  ) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "You do not have permission to perform this action",
     });
   }
-  return member.role;
+  return orgMember.role;
 }
 
-async function getEntityWithWorkspace(entityId: string) {
+async function getEntityWithOrganization(entityId: string) {
   const entity = await db.query.entityDefinition.findFirst({
     where: eq(entityDefinition.id, entityId),
   });
@@ -69,16 +74,15 @@ const attributeConfigSchema = z
 
 export const entityRouter = router({
   list: protectedProcedure
-    .input(z.object({ workspaceId: z.string().uuid() }))
+    .input(z.object({ organizationId: z.string() }))
     .query(async ({ ctx, input }) => {
-      await requireWorkspaceAccess(input.workspaceId, ctx.session.user.id, [
-        "owner",
-        "admin",
-        "member",
-        "viewer",
-      ]);
+      await requireOrganizationAccess(
+        input.organizationId,
+        ctx.session.user.id,
+        ["owner", "admin", "member"]
+      );
       return db.query.entityDefinition.findMany({
-        where: eq(entityDefinition.workspaceId, input.workspaceId),
+        where: eq(entityDefinition.organizationId, input.organizationId),
         with: { attributes: { orderBy: [asc(attribute.order)] } },
       });
     }),
@@ -86,13 +90,12 @@ export const entityRouter = router({
   getById: protectedProcedure
     .input(z.object({ entityId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      const entity = await getEntityWithWorkspace(input.entityId);
-      await requireWorkspaceAccess(entity.workspaceId, ctx.session.user.id, [
-        "owner",
-        "admin",
-        "member",
-        "viewer",
-      ]);
+      const entity = await getEntityWithOrganization(input.entityId);
+      await requireOrganizationAccess(
+        entity.organizationId,
+        ctx.session.user.id,
+        ["owner", "admin", "member"]
+      );
       return db.query.entityDefinition.findFirst({
         where: eq(entityDefinition.id, input.entityId),
         with: { attributes: { orderBy: [asc(attribute.order)] } },
@@ -102,20 +105,19 @@ export const entityRouter = router({
   getBySlug: protectedProcedure
     .input(
       z.object({
-        workspaceId: z.string().uuid(),
+        organizationId: z.string(),
         slug: z.string(),
       })
     )
     .query(async ({ ctx, input }) => {
-      await requireWorkspaceAccess(input.workspaceId, ctx.session.user.id, [
-        "owner",
-        "admin",
-        "member",
-        "viewer",
-      ]);
+      await requireOrganizationAccess(
+        input.organizationId,
+        ctx.session.user.id,
+        ["owner", "admin", "member"]
+      );
       const entity = await db.query.entityDefinition.findFirst({
         where: and(
-          eq(entityDefinition.workspaceId, input.workspaceId),
+          eq(entityDefinition.organizationId, input.organizationId),
           eq(entityDefinition.slug, input.slug)
         ),
         with: { attributes: { orderBy: [asc(attribute.order)] } },
@@ -129,7 +131,7 @@ export const entityRouter = router({
   create: protectedProcedure
     .input(
       z.object({
-        workspaceId: z.string().uuid(),
+        organizationId: z.string(),
         singularName: z.string().min(1).max(100),
         pluralName: z.string().min(1).max(100),
         description: z.string().max(500).optional(),
@@ -151,18 +153,18 @@ export const entityRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      await requireWorkspaceAccess(input.workspaceId, ctx.session.user.id, [
-        "owner",
-        "admin",
-        "member",
-      ]);
+      await requireOrganizationAccess(
+        input.organizationId,
+        ctx.session.user.id,
+        ["owner", "admin", "member"]
+      );
 
       let slug = generateSlug(input.singularName);
       let counter = 1;
       while (
         await db.query.entityDefinition.findFirst({
           where: and(
-            eq(entityDefinition.workspaceId, input.workspaceId),
+            eq(entityDefinition.organizationId, input.organizationId),
             eq(entityDefinition.slug, slug)
           ),
         })
@@ -174,7 +176,7 @@ export const entityRouter = router({
       const [newEntity] = await db
         .insert(entityDefinition)
         .values({
-          workspaceId: input.workspaceId,
+          organizationId: input.organizationId,
           slug,
           singularName: input.singularName,
           pluralName: input.pluralName,
@@ -239,12 +241,12 @@ export const entityRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const entity = await getEntityWithWorkspace(input.entityId);
-      await requireWorkspaceAccess(entity.workspaceId, ctx.session.user.id, [
-        "owner",
-        "admin",
-        "member",
-      ]);
+      const entity = await getEntityWithOrganization(input.entityId);
+      await requireOrganizationAccess(
+        entity.organizationId,
+        ctx.session.user.id,
+        ["owner", "admin", "member"]
+      );
 
       const [updated] = await db
         .update(entityDefinition)
@@ -266,11 +268,12 @@ export const entityRouter = router({
   delete: protectedProcedure
     .input(z.object({ entityId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const entity = await getEntityWithWorkspace(input.entityId);
-      await requireWorkspaceAccess(entity.workspaceId, ctx.session.user.id, [
-        "owner",
-        "admin",
-      ]);
+      const entity = await getEntityWithOrganization(input.entityId);
+      await requireOrganizationAccess(
+        entity.organizationId,
+        ctx.session.user.id,
+        ["owner", "admin"]
+      );
       await db
         .delete(entityDefinition)
         .where(eq(entityDefinition.id, input.entityId));
@@ -291,12 +294,12 @@ export const entityRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const entity = await getEntityWithWorkspace(input.entityDefinitionId);
-      await requireWorkspaceAccess(entity.workspaceId, ctx.session.user.id, [
-        "owner",
-        "admin",
-        "member",
-      ]);
+      const entity = await getEntityWithOrganization(input.entityDefinitionId);
+      await requireOrganizationAccess(
+        entity.organizationId,
+        ctx.session.user.id,
+        ["owner", "admin", "member"]
+      );
 
       const existingAttrs = await db.query.attribute.findMany({
         where: eq(attribute.entityDefinitionId, input.entityDefinitionId),
@@ -360,12 +363,12 @@ export const entityRouter = router({
         });
       }
 
-      const entity = await getEntityWithWorkspace(attr.entityDefinitionId);
-      await requireWorkspaceAccess(entity.workspaceId, ctx.session.user.id, [
-        "owner",
-        "admin",
-        "member",
-      ]);
+      const entity = await getEntityWithOrganization(attr.entityDefinitionId);
+      await requireOrganizationAccess(
+        entity.organizationId,
+        ctx.session.user.id,
+        ["owner", "admin", "member"]
+      );
 
       const [updated] = await db
         .update(attribute)
@@ -409,12 +412,12 @@ export const entityRouter = router({
         });
       }
 
-      const entity = await getEntityWithWorkspace(attr.entityDefinitionId);
-      await requireWorkspaceAccess(entity.workspaceId, ctx.session.user.id, [
-        "owner",
-        "admin",
-        "member",
-      ]);
+      const entity = await getEntityWithOrganization(attr.entityDefinitionId);
+      await requireOrganizationAccess(
+        entity.organizationId,
+        ctx.session.user.id,
+        ["owner", "admin", "member"]
+      );
 
       await db.delete(attribute).where(eq(attribute.id, input.attributeId));
       return { success: true };
@@ -428,12 +431,12 @@ export const entityRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const entity = await getEntityWithWorkspace(input.entityDefinitionId);
-      await requireWorkspaceAccess(entity.workspaceId, ctx.session.user.id, [
-        "owner",
-        "admin",
-        "member",
-      ]);
+      const entity = await getEntityWithOrganization(input.entityDefinitionId);
+      await requireOrganizationAccess(
+        entity.organizationId,
+        ctx.session.user.id,
+        ["owner", "admin", "member"]
+      );
 
       await Promise.all(
         input.orderedIds.map((id, index) =>
