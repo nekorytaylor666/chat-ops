@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { AlertTriangle, Info, Trash2 } from "lucide-react";
+import { AlertTriangle, Info, Loader2, Trash2 } from "lucide-react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,33 +19,63 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useEntities } from "@/contexts/entity-context";
-import type { EntityDefinition } from "@/types/entity";
+import { useDeleteEntity, useUpdateEntity } from "@/hooks/use-entity-mutations";
+
+interface Entity {
+  id: string;
+  slug: string;
+  singularName: string;
+  pluralName: string;
+  description?: string | null;
+  icon?: string | null;
+  color?: string | null;
+  attributes: Array<{
+    id: string;
+    slug: string;
+    name: string;
+    type: string;
+  }>;
+}
 
 interface ConfigurationTabProps {
-  entity: EntityDefinition;
+  entity: Entity;
 }
 
 export function ConfigurationTab({ entity }: ConfigurationTabProps) {
   const navigate = useNavigate();
-  const { updateEntity, deleteEntity } = useEntities();
+  const updateEntity = useUpdateEntity();
+  const deleteEntity = useDeleteEntity();
+
   const [singularName, setSingularName] = React.useState(entity.singularName);
   const [pluralName, setPluralName] = React.useState(entity.pluralName);
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
+
+  // Reset form when entity changes
+  React.useEffect(() => {
+    setSingularName(entity.singularName);
+    setPluralName(entity.pluralName);
+  }, [entity.singularName, entity.pluralName]);
 
   const hasChanges =
     singularName !== entity.singularName || pluralName !== entity.pluralName;
 
   const handleSave = () => {
-    updateEntity(entity.slug, {
+    updateEntity.mutate({
+      entityId: entity.id,
       singularName,
       pluralName,
     });
   };
 
   const handleDelete = () => {
-    deleteEntity(entity.slug);
-    navigate({ to: "/entities" });
+    deleteEntity.mutate(
+      { entityId: entity.id },
+      {
+        onSuccess: () => {
+          navigate({ to: "/entities" });
+        },
+      }
+    );
   };
 
   return (
@@ -99,7 +129,12 @@ export function ConfigurationTab({ entity }: ConfigurationTabProps) {
 
           {hasChanges && (
             <div className="flex justify-end pt-2">
-              <Button onClick={handleSave}>Save changes</Button>
+              <Button disabled={updateEntity.isPending} onClick={handleSave}>
+                {updateEntity.isPending && (
+                  <Loader2 className="size-4 animate-spin" />
+                )}
+                Save changes
+              </Button>
             </div>
           )}
         </CardContent>
@@ -149,7 +184,14 @@ export function ConfigurationTab({ entity }: ConfigurationTabProps) {
             >
               Cancel
             </Button>
-            <Button onClick={handleDelete} variant="destructive">
+            <Button
+              disabled={deleteEntity.isPending}
+              onClick={handleDelete}
+              variant="destructive"
+            >
+              {deleteEntity.isPending && (
+                <Loader2 className="size-4 animate-spin" />
+              )}
               Delete
             </Button>
           </DialogFooter>
