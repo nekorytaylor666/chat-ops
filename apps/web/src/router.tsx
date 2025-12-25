@@ -10,6 +10,8 @@ import {
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { toast } from "sonner";
+// WorkspaceProvider is used in Wrap component
+import { WorkspaceProvider } from "@/contexts/workspace-context";
 import { routeTree } from "./routeTree.gen";
 import { TRPCProvider } from "./utils/trpc";
 
@@ -54,13 +56,15 @@ export const getRouter = () => {
     context: { trpc, queryClient },
     defaultPendingComponent: () => <Loader />,
     defaultNotFoundComponent: () => <div>Not Found</div>,
-    Wrap: ({ children }) => (
-      <QueryClientProvider client={queryClient}>
-        <TRPCProvider queryClient={queryClient} trpcClient={trpcClient}>
-          {children}
-        </TRPCProvider>
-      </QueryClientProvider>
-    ),
+    Wrap({ children }) {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TRPCProvider queryClient={queryClient} trpcClient={trpcClient}>
+            <WorkspaceProvider>{children}</WorkspaceProvider>
+          </TRPCProvider>
+        </QueryClientProvider>
+      );
+    },
   });
   return router;
 };

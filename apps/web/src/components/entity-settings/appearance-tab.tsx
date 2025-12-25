@@ -6,6 +6,7 @@ import {
   FileText,
   Folder,
   Heart,
+  Loader2,
   Mail,
   MapPin,
   Package,
@@ -26,9 +27,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useEntities } from "@/contexts/entity-context";
+import { useUpdateEntity } from "@/hooks/use-entity-mutations";
 import { cn } from "@/lib/utils";
-import type { EntityDefinition } from "@/types/entity";
 
 // Available icons for entities
 const ICON_OPTIONS = [
@@ -71,12 +71,29 @@ const COLOR_OPTIONS = [
   "#64748b", // Slate
 ];
 
+interface Entity {
+  id: string;
+  slug: string;
+  singularName: string;
+  pluralName: string;
+  description?: string | null;
+  icon?: string | null;
+  color?: string | null;
+  attributes: Array<{
+    id: string;
+    slug: string;
+    name: string;
+    type: string;
+  }>;
+}
+
 interface AppearanceTabProps {
-  entity: EntityDefinition;
+  entity: Entity;
 }
 
 export function AppearanceTab({ entity }: AppearanceTabProps) {
-  const { updateEntity } = useEntities();
+  const updateEntity = useUpdateEntity();
+
   const [selectedIcon, setSelectedIcon] = React.useState(
     entity.icon ?? "Building2"
   );
@@ -85,11 +102,19 @@ export function AppearanceTab({ entity }: AppearanceTabProps) {
   );
   const [customColor, setCustomColor] = React.useState(entity.color ?? "");
 
+  // Reset form when entity changes
+  React.useEffect(() => {
+    setSelectedIcon(entity.icon ?? "Building2");
+    setSelectedColor(entity.color ?? "#6366f1");
+    setCustomColor(entity.color ?? "");
+  }, [entity.icon, entity.color]);
+
   const hasChanges =
     selectedIcon !== entity.icon || selectedColor !== entity.color;
 
   const handleSave = () => {
-    updateEntity(entity.slug, {
+    updateEntity.mutate({
+      entityId: entity.id,
       icon: selectedIcon,
       color: selectedColor,
     });
@@ -210,7 +235,12 @@ export function AppearanceTab({ entity }: AppearanceTabProps) {
 
       {hasChanges && (
         <div className="flex justify-end">
-          <Button onClick={handleSave}>Save changes</Button>
+          <Button disabled={updateEntity.isPending} onClick={handleSave}>
+            {updateEntity.isPending && (
+              <Loader2 className="size-4 animate-spin" />
+            )}
+            Save changes
+          </Button>
         </div>
       )}
     </div>

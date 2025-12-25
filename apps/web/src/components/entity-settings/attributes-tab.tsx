@@ -25,14 +25,46 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { useEntities } from "@/contexts/entity-context";
+import {
+  useDeleteAttribute,
+  useReorderAttributes,
+} from "@/hooks/use-entity-mutations";
 import { cn } from "@/lib/utils";
-import type {
-  AttributeDefinition,
-  AttributeType,
-  EntityDefinition,
-} from "@/types/entity";
 import { AttributeModal } from "./attribute-modal";
+
+type AttributeType =
+  | "short-text"
+  | "long-text"
+  | "number"
+  | "select"
+  | "multi-select"
+  | "checkbox"
+  | "date"
+  | "url";
+
+interface Attribute {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string | null;
+  type: AttributeType;
+  isRequired: boolean;
+  isUnique: boolean;
+  isSystem: boolean;
+  order: number;
+  config?: unknown;
+}
+
+interface Entity {
+  id: string;
+  slug: string;
+  singularName: string;
+  pluralName: string;
+  description?: string | null;
+  icon?: string | null;
+  color?: string | null;
+  attributes: Attribute[];
+}
 
 // Map attribute types to icons
 const TYPE_ICONS: Record<AttributeType, React.ElementType> = {
@@ -58,15 +90,17 @@ const TYPE_LABELS: Record<AttributeType, string> = {
 };
 
 interface AttributesTabProps {
-  entity: EntityDefinition;
+  entity: Entity;
 }
 
 export function AttributesTab({ entity }: AttributesTabProps) {
-  const { deleteAttribute, reorderAttributes } = useEntities();
+  const deleteAttribute = useDeleteAttribute();
+  const reorderAttributes = useReorderAttributes();
+
   const [searchQuery, setSearchQuery] = React.useState("");
   const [modalOpen, setModalOpen] = React.useState(false);
   const [editingAttribute, setEditingAttribute] = React.useState<
-    AttributeDefinition | undefined
+    Attribute | undefined
   >();
 
   // Filter attributes by search query
@@ -81,14 +115,14 @@ export function AttributesTab({ entity }: AttributesTabProps) {
     setModalOpen(true);
   };
 
-  const handleEditAttribute = (attr: AttributeDefinition) => {
+  const handleEditAttribute = (attr: Attribute) => {
     setEditingAttribute(attr);
     setModalOpen(true);
   };
 
-  const handleDeleteAttribute = (attr: AttributeDefinition) => {
+  const handleDeleteAttribute = (attr: Attribute) => {
     if (attr.isSystem) return;
-    deleteAttribute(entity.slug, attr.id);
+    deleteAttribute.mutate({ attributeId: attr.id });
   };
 
   // Simple drag and drop state
@@ -123,7 +157,10 @@ export function AttributesTab({ entity }: AttributesTabProps) {
     newOrder.splice(draggedIndex, 1);
     newOrder.splice(targetIndex, 0, draggedId);
 
-    reorderAttributes(entity.slug, newOrder);
+    reorderAttributes.mutate({
+      entityDefinitionId: entity.id,
+      orderedIds: newOrder,
+    });
     setDraggedId(null);
   };
 
@@ -263,7 +300,7 @@ export function AttributesTab({ entity }: AttributesTabProps) {
       {/* Attribute Modal */}
       <AttributeModal
         attribute={editingAttribute}
-        entitySlug={entity.slug}
+        entityId={entity.id}
         onOpenChange={setModalOpen}
         open={modalOpen}
       />

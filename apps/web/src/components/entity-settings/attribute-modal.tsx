@@ -6,6 +6,7 @@ import {
   Hash,
   Link,
   List,
+  Loader2,
   Plus,
   Type,
   X,
@@ -30,12 +31,37 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useEntities } from "@/contexts/entity-context";
-import type {
-  AttributeDefinition,
-  AttributeType,
-  SelectAttributeConfig,
-} from "@/types/entity";
+import {
+  useAddAttribute,
+  useUpdateAttribute,
+} from "@/hooks/use-entity-mutations";
+
+type AttributeType =
+  | "short-text"
+  | "long-text"
+  | "number"
+  | "select"
+  | "multi-select"
+  | "checkbox"
+  | "date"
+  | "url";
+
+interface SelectConfig {
+  options?: Array<{ label: string; value: string }>;
+}
+
+interface Attribute {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string | null;
+  type: AttributeType;
+  isRequired: boolean;
+  isUnique: boolean;
+  isSystem: boolean;
+  order: number;
+  config?: SelectConfig | null;
+}
 
 const ATTRIBUTE_TYPES: {
   value: AttributeType;
@@ -55,17 +81,19 @@ const ATTRIBUTE_TYPES: {
 interface AttributeModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  entitySlug: string;
-  attribute?: AttributeDefinition;
+  entityId: string;
+  attribute?: Attribute;
 }
 
 export function AttributeModal({
   open,
   onOpenChange,
-  entitySlug,
+  entityId,
   attribute,
 }: AttributeModalProps) {
-  const { addAttribute, updateAttribute } = useEntities();
+  const addAttribute = useAddAttribute();
+  const updateAttribute = useUpdateAttribute();
+
   const isEditing = !!attribute;
 
   const [type, setType] = React.useState<AttributeType>(
@@ -80,9 +108,7 @@ export function AttributeModal({
   );
   const [isUnique, setIsUnique] = React.useState(attribute?.isUnique ?? false);
   const [options, setOptions] = React.useState<string[]>(
-    (attribute?.config as SelectAttributeConfig)?.options?.map(
-      (o) => o.label
-    ) ?? [""]
+    attribute?.config?.options?.map((o) => o.label) ?? [""]
   );
 
   // Reset form when modal opens/closes or attribute changes
@@ -93,13 +119,11 @@ export function AttributeModal({
       setDescription(attribute?.description ?? "");
       setIsRequired(attribute?.isRequired ?? false);
       setIsUnique(attribute?.isUnique ?? false);
-      setOptions(
-        (attribute?.config as SelectAttributeConfig)?.options?.map(
-          (o) => o.label
-        ) ?? [""]
-      );
+      setOptions(attribute?.config?.options?.map((o) => o.label) ?? [""]);
     }
   }, [open, attribute]);
+
+  const isPending = addAttribute.isPending || updateAttribute.isPending;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,25 +143,35 @@ export function AttributeModal({
         : undefined;
 
     if (isEditing && attribute) {
-      updateAttribute(entitySlug, attribute.id, {
-        name: name.trim(),
-        description: description.trim() || undefined,
-        isRequired,
-        isUnique,
-        config,
-      });
+      updateAttribute.mutate(
+        {
+          attributeId: attribute.id,
+          name: name.trim(),
+          description: description.trim() || undefined,
+          isRequired,
+          isUnique,
+          config,
+        },
+        {
+          onSuccess: () => onOpenChange(false),
+        }
+      );
     } else {
-      addAttribute(entitySlug, {
-        name: name.trim(),
-        type,
-        description: description.trim() || undefined,
-        isRequired,
-        isUnique,
-        config,
-      });
+      addAttribute.mutate(
+        {
+          entityDefinitionId: entityId,
+          name: name.trim(),
+          type,
+          description: description.trim() || undefined,
+          isRequired,
+          isUnique,
+          config,
+        },
+        {
+          onSuccess: () => onOpenChange(false),
+        }
+      );
     }
-
-    onOpenChange(false);
   };
 
   const handleAddOption = () => {
@@ -292,7 +326,8 @@ export function AttributeModal({
             >
               Cancel
             </Button>
-            <Button disabled={!name.trim()} type="submit">
+            <Button disabled={!name.trim() || isPending} type="submit">
+              {isPending && <Loader2 className="size-4 animate-spin" />}
               {isEditing ? "Save changes" : "Create attribute"}
             </Button>
           </DialogFooter>

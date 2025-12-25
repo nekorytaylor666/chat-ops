@@ -12,7 +12,6 @@ import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
-import { EntityProvider } from "@/contexts/entity-context";
 import Header, { PageHeaderProvider } from "../components/header";
 import appCss from "../index.css?url";
 export interface RouterAppContext {
@@ -52,19 +51,17 @@ function RootDocument() {
         <HeadContent />
       </head>
       <body>
-        <EntityProvider>
-          <PageHeaderProvider>
-            <SidebarProvider>
-              <AppSidebar />
-              <SidebarInset>
-                <Header />
-                <main className="min-w-0 flex-1 overflow-auto">
-                  <Outlet />
-                </main>
-              </SidebarInset>
-            </SidebarProvider>
-          </PageHeaderProvider>
-        </EntityProvider>
+        <PageHeaderProvider>
+          <SidebarProvider>
+            <AppSidebar />
+            <SidebarInset>
+              <Header />
+              <main className="min-w-0 flex-1 overflow-auto">
+                <Outlet />
+              </main>
+            </SidebarInset>
+          </SidebarProvider>
+        </PageHeaderProvider>
         <Toaster richColors />
         <TanStackRouterDevtools position="bottom-left" />
         <ReactQueryDevtools buttonPosition="bottom-right" position="bottom" />

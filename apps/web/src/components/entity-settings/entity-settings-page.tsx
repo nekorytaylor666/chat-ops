@@ -2,8 +2,10 @@ import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Box } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useEntities } from "@/contexts/entity-context";
+import { useEntityBySlug } from "@/hooks/use-entities";
+
 import { AppearanceTab } from "./appearance-tab";
 import { AttributesTab } from "./attributes-tab";
 import { ConfigurationTab } from "./configuration-tab";
@@ -13,10 +15,34 @@ interface EntitySettingsPageProps {
 }
 
 export function EntitySettingsPage({ entitySlug }: EntitySettingsPageProps) {
-  const { getEntity } = useEntities();
-  const entity = getEntity(entitySlug);
+  const { data: entity, isLoading, isError } = useEntityBySlug(entitySlug);
 
-  if (!entity) {
+  if (isLoading) {
+    return (
+      <div className="flex h-full flex-col">
+        <div className="border-b px-6 py-4">
+          <Button asChild className="mb-4" size="sm" variant="ghost">
+            <Link to="/entities">
+              <ArrowLeft className="size-4" />
+              Back
+            </Link>
+          </Button>
+          <div className="flex items-center gap-3">
+            <Skeleton className="size-12 rounded-lg" />
+            <div>
+              <Skeleton className="mb-2 h-6 w-32" />
+              <Skeleton className="h-4 w-48" />
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 p-6">
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !entity) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
