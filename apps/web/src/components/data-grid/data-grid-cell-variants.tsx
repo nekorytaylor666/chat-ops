@@ -45,6 +45,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useBadgeOverflow } from "@/hooks/use-badge-overflow";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
+import { useRelationRecords } from "@/hooks/use-relation-records";
+import { useResolveRelations } from "@/hooks/use-resolve-relations";
 import { getCellKey, getLineCount } from "@/lib/data-grid";
 import { cn } from "@/lib/utils";
 import type { DataGridCellProps, FileCellData } from "@/types/data-grid";
@@ -66,31 +68,42 @@ export function ShortTextCell<TData>({
   const [value, setValue] = React.useState(initialValue);
   const cellRef = React.useRef<HTMLDivElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const lastSavedValueRef = React.useRef(initialValue);
 
   const prevInitialValueRef = React.useRef(initialValue);
   if (initialValue !== prevInitialValueRef.current) {
     prevInitialValueRef.current = initialValue;
+    lastSavedValueRef.current = initialValue;
     setValue(initialValue);
     if (cellRef.current && !isEditing) {
       cellRef.current.textContent = initialValue;
     }
   }
 
+  const debouncedSave = useDebouncedCallback((newValue: string) => {
+    if (!readOnly && newValue !== lastSavedValueRef.current) {
+      tableMeta?.onDataUpdate?.({ rowIndex, columnId, value: newValue });
+      lastSavedValueRef.current = newValue;
+    }
+  }, 500);
+
   const onBlur = React.useCallback(() => {
     // Read the current value directly from the DOM to avoid stale state
     const currentValue = cellRef.current?.textContent ?? "";
-    if (!readOnly && currentValue !== initialValue) {
+    if (!readOnly && currentValue !== lastSavedValueRef.current) {
       tableMeta?.onDataUpdate?.({ rowIndex, columnId, value: currentValue });
+      lastSavedValueRef.current = currentValue;
     }
     tableMeta?.onCellEditingStop?.();
-  }, [tableMeta, rowIndex, columnId, initialValue, readOnly]);
+  }, [tableMeta, rowIndex, columnId, readOnly]);
 
   const onInput = React.useCallback(
     (event: React.FormEvent<HTMLDivElement>) => {
       const currentValue = event.currentTarget.textContent ?? "";
       setValue(currentValue);
+      debouncedSave(currentValue);
     },
-    []
+    [debouncedSave]
   );
 
   const onWrapperKeyDown = React.useCallback(
@@ -99,23 +112,25 @@ export function ShortTextCell<TData>({
         if (event.key === "Enter") {
           event.preventDefault();
           const currentValue = cellRef.current?.textContent ?? "";
-          if (currentValue !== initialValue) {
+          if (currentValue !== lastSavedValueRef.current) {
             tableMeta?.onDataUpdate?.({
               rowIndex,
               columnId,
               value: currentValue,
             });
+            lastSavedValueRef.current = currentValue;
           }
           tableMeta?.onCellEditingStop?.({ moveToNextRow: true });
         } else if (event.key === "Tab") {
           event.preventDefault();
           const currentValue = cellRef.current?.textContent ?? "";
-          if (currentValue !== initialValue) {
+          if (currentValue !== lastSavedValueRef.current) {
             tableMeta?.onDataUpdate?.({
               rowIndex,
               columnId,
               value: currentValue,
             });
+            lastSavedValueRef.current = currentValue;
           }
           tableMeta?.onCellEditingStop?.({
             direction: event.shiftKey ? "left" : "right",
@@ -123,6 +138,9 @@ export function ShortTextCell<TData>({
         } else if (event.key === "Escape") {
           event.preventDefault();
           setValue(initialValue);
+          if (cellRef.current) {
+            cellRef.current.textContent = initialValue;
+          }
           cellRef.current?.blur();
         }
       } else if (
@@ -382,6 +400,7 @@ export function NumberCell<TData>({
   const [value, setValue] = React.useState(String(initialValue ?? ""));
   const inputRef = React.useRef<HTMLInputElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const lastSavedValueRef = React.useRef(initialValue);
 
   const cellOpts = cell.column.columnDef.meta?.cell;
   const numberCellOpts = cellOpts?.variant === "number" ? cellOpts : null;
@@ -394,22 +413,33 @@ export function NumberCell<TData>({
   const prevInitialValueRef = React.useRef(initialValue);
   if (initialValue !== prevInitialValueRef.current) {
     prevInitialValueRef.current = initialValue;
+    lastSavedValueRef.current = initialValue;
     setValue(String(initialValue ?? ""));
   }
 
+  const debouncedSave = useDebouncedCallback((newValue: string) => {
+    const numValue = newValue === "" ? null : Number(newValue);
+    if (!readOnly && numValue !== lastSavedValueRef.current) {
+      tableMeta?.onDataUpdate?.({ rowIndex, columnId, value: numValue });
+      lastSavedValueRef.current = numValue;
+    }
+  }, 500);
+
   const onBlur = React.useCallback(() => {
     const numValue = value === "" ? null : Number(value);
-    if (!readOnly && numValue !== initialValue) {
+    if (!readOnly && numValue !== lastSavedValueRef.current) {
       tableMeta?.onDataUpdate?.({ rowIndex, columnId, value: numValue });
+      lastSavedValueRef.current = numValue;
     }
     tableMeta?.onCellEditingStop?.();
-  }, [tableMeta, rowIndex, columnId, initialValue, value, readOnly]);
+  }, [tableMeta, rowIndex, columnId, value, readOnly]);
 
   const onChange = React.useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       setValue(event.target.value);
+      debouncedSave(event.target.value);
     },
-    []
+    [debouncedSave]
   );
 
   const onWrapperKeyDown = React.useCallback(
@@ -418,22 +448,24 @@ export function NumberCell<TData>({
         if (event.key === "Enter") {
           event.preventDefault();
           const numValue = value === "" ? null : Number(value);
-          if (numValue !== initialValue) {
+          if (numValue !== lastSavedValueRef.current) {
             tableMeta?.onDataUpdate?.({ rowIndex, columnId, value: numValue });
+            lastSavedValueRef.current = numValue;
           }
           tableMeta?.onCellEditingStop?.({ moveToNextRow: true });
         } else if (event.key === "Tab") {
           event.preventDefault();
           const numValue = value === "" ? null : Number(value);
-          if (numValue !== initialValue) {
+          if (numValue !== lastSavedValueRef.current) {
             tableMeta?.onDataUpdate?.({ rowIndex, columnId, value: numValue });
+            lastSavedValueRef.current = numValue;
           }
           tableMeta?.onCellEditingStop?.({
             direction: event.shiftKey ? "left" : "right",
           });
         } else if (event.key === "Escape") {
           event.preventDefault();
-          setValue(String(initialValue ?? ""));
+          setValue(String(lastSavedValueRef.current ?? ""));
           inputRef.current?.blur();
         }
       } else if (isFocused) {
@@ -446,7 +478,7 @@ export function NumberCell<TData>({
         }
       }
     },
-    [isEditing, isFocused, initialValue, tableMeta, rowIndex, columnId, value]
+    [isEditing, isFocused, tableMeta, rowIndex, columnId, value]
   );
 
   React.useEffect(() => {
@@ -2106,6 +2138,720 @@ export function FileCell<TData>({
           )}
         </div>
       ) : null}
+    </DataGridCellWrapper>
+  );
+}
+
+export function RelationCell<TData>({
+  cell,
+  tableMeta,
+  rowIndex,
+  columnId,
+  rowHeight,
+  isFocused,
+  isEditing,
+  isSelected,
+  isSearchMatch,
+  isActiveSearchMatch,
+  readOnly,
+}: DataGridCellProps<TData>) {
+  const initialValue = cell.getValue() as string | null;
+  const [value, setValue] = React.useState(initialValue);
+  const [searchValue, setSearchValue] = React.useState("");
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const cellOpts = cell.column.columnDef.meta?.cell;
+  const targetEntityId =
+    cellOpts?.variant === "relation" ? cellOpts.targetEntityId : "";
+  const targetEntitySlug =
+    cellOpts?.variant === "relation" ? cellOpts.targetEntitySlug : "";
+
+  const prevInitialValueRef = React.useRef(initialValue);
+  if (initialValue !== prevInitialValueRef.current) {
+    prevInitialValueRef.current = initialValue;
+    setValue(initialValue);
+  }
+
+  // Fetch available records from target entity
+  const { data: targetRecordsData } = useRelationRecords({
+    targetEntityId,
+    enabled: isEditing && !!targetEntityId,
+  });
+
+  // Resolve the current value to get record name
+  const recordIdsToResolve = React.useMemo(
+    () => (value ? [value] : []),
+    [value]
+  );
+  const { data: resolvedRecordsData } = useResolveRelations(recordIdsToResolve);
+
+  const resolvedRecord = value ? resolvedRecordsData?.[value] : null;
+  const availableRecords = React.useMemo(() => {
+    if (!targetRecordsData) return [];
+    return targetRecordsData.map(
+      (record: { id: string; values: Record<string, unknown> }) => ({
+        id: record.id,
+        name: (record.values?.name as string) ?? "Unnamed",
+      })
+    );
+  }, [targetRecordsData]);
+
+  const filteredRecords = React.useMemo(() => {
+    if (!searchValue) return availableRecords;
+    const searchLower = searchValue.toLowerCase();
+    return availableRecords.filter((record) =>
+      record.name.toLowerCase().includes(searchLower)
+    );
+  }, [availableRecords, searchValue]);
+
+  const onValueChange = React.useCallback(
+    (newValue: string | null) => {
+      if (readOnly) return;
+      setValue(newValue);
+      tableMeta?.onDataUpdate?.({ rowIndex, columnId, value: newValue });
+      setSearchValue("");
+      tableMeta?.onCellEditingStop?.();
+    },
+    [tableMeta, rowIndex, columnId, readOnly]
+  );
+
+  const onOpenChange = React.useCallback(
+    (open: boolean) => {
+      if (open && !readOnly) {
+        tableMeta?.onCellEditingStart?.(rowIndex, columnId);
+      } else {
+        setSearchValue("");
+        tableMeta?.onCellEditingStop?.();
+      }
+    },
+    [tableMeta, rowIndex, columnId, readOnly]
+  );
+
+  const onOpenAutoFocus: NonNullable<
+    React.ComponentProps<typeof PopoverContent>["onOpenAutoFocus"]
+  > = React.useCallback((event) => {
+    event.preventDefault();
+    inputRef.current?.focus();
+  }, []);
+
+  const onWrapperKeyDown = React.useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (isEditing && event.key === "Escape") {
+        event.preventDefault();
+        setValue(initialValue);
+        setSearchValue("");
+        tableMeta?.onCellEditingStop?.();
+      } else if (!isEditing && isFocused && event.key === "Tab") {
+        event.preventDefault();
+        tableMeta?.onCellEditingStop?.({
+          direction: event.shiftKey ? "left" : "right",
+        });
+      }
+    },
+    [isEditing, isFocused, initialValue, tableMeta]
+  );
+
+  const sideOffset = -(containerRef.current?.clientHeight ?? 0);
+
+  return (
+    <DataGridCellWrapper<TData>
+      cell={cell}
+      columnId={columnId}
+      isActiveSearchMatch={isActiveSearchMatch}
+      isEditing={isEditing}
+      isFocused={isFocused}
+      isSearchMatch={isSearchMatch}
+      isSelected={isSelected}
+      onKeyDown={onWrapperKeyDown}
+      readOnly={readOnly}
+      ref={containerRef}
+      rowHeight={rowHeight}
+      rowIndex={rowIndex}
+      tableMeta={tableMeta}
+    >
+      {isEditing ? (
+        <Popover onOpenChange={onOpenChange} open={isEditing}>
+          <PopoverAnchor asChild>
+            <div className="absolute inset-0" />
+          </PopoverAnchor>
+          <PopoverContent
+            align="start"
+            className="w-[280px] rounded-none p-0"
+            data-grid-cell-editor=""
+            onOpenAutoFocus={onOpenAutoFocus}
+            sideOffset={sideOffset}
+          >
+            <Command className="**:data-[slot=command-input-wrapper]:border-none">
+              <CommandInput
+                onValueChange={setSearchValue}
+                placeholder="Search records..."
+                ref={inputRef}
+                value={searchValue}
+              />
+              <CommandList>
+                <CommandEmpty>No records found.</CommandEmpty>
+                {value && (
+                  <>
+                    <CommandGroup>
+                      <CommandItem
+                        onSelect={() => onValueChange(null)}
+                        value="__clear__"
+                      >
+                        <X className="mr-2 size-4" />
+                        Clear selection
+                      </CommandItem>
+                    </CommandGroup>
+                    <CommandSeparator />
+                  </>
+                )}
+                <CommandGroup>
+                  {filteredRecords.map((record) => (
+                    <CommandItem
+                      key={record.id}
+                      onSelect={() => onValueChange(record.id)}
+                      value={record.id}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 size-4",
+                          value === record.id ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      {record.name}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+      ) : value && resolvedRecord ? (
+        <a
+          className="text-primary underline-offset-4 hover:underline"
+          data-slot="grid-cell-content"
+          href={`/entities/${targetEntitySlug || resolvedRecord.entitySlug}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {resolvedRecord.name}
+        </a>
+      ) : value ? (
+        <Badge
+          className="px-1.5 py-px text-muted-foreground"
+          data-slot="grid-cell-content"
+          variant="outline"
+        >
+          Loading...
+        </Badge>
+      ) : null}
+    </DataGridCellWrapper>
+  );
+}
+
+export function RelationMultiCell<TData>({
+  cell,
+  tableMeta,
+  rowIndex,
+  columnId,
+  rowHeight,
+  isFocused,
+  isEditing,
+  isSelected,
+  isSearchMatch,
+  isActiveSearchMatch,
+  readOnly,
+}: DataGridCellProps<TData>) {
+  const cellValue = React.useMemo(() => {
+    const value = cell.getValue() as string[];
+    return value ?? [];
+  }, [cell]);
+
+  const cellKey = getCellKey(rowIndex, columnId);
+  const prevCellKeyRef = React.useRef(cellKey);
+
+  const [selectedValues, setSelectedValues] =
+    React.useState<string[]>(cellValue);
+  const [searchValue, setSearchValue] = React.useState("");
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const cellOpts = cell.column.columnDef.meta?.cell;
+  const targetEntityId =
+    cellOpts?.variant === "relation-multi" ? cellOpts.targetEntityId : "";
+  const targetEntitySlug =
+    cellOpts?.variant === "relation-multi" ? cellOpts.targetEntitySlug : "";
+
+  const sideOffset = -(containerRef.current?.clientHeight ?? 0);
+
+  const prevCellValueRef = React.useRef(cellValue);
+  if (cellValue !== prevCellValueRef.current) {
+    prevCellValueRef.current = cellValue;
+    setSelectedValues(cellValue);
+  }
+
+  if (prevCellKeyRef.current !== cellKey) {
+    prevCellKeyRef.current = cellKey;
+    setSearchValue("");
+  }
+
+  // Fetch available records from target entity
+  const { data: targetRecordsData } = useRelationRecords({
+    targetEntityId,
+    enabled: isEditing && !!targetEntityId,
+  });
+
+  // Resolve the current values to get record names
+  const { data: resolvedRecordsData } = useResolveRelations(selectedValues);
+
+  const availableRecords = React.useMemo(() => {
+    if (!targetRecordsData) return [];
+    return targetRecordsData.map(
+      (record: { id: string; values: Record<string, unknown> }) => ({
+        id: record.id,
+        name: (record.values?.name as string) ?? "Unnamed",
+      })
+    );
+  }, [targetRecordsData]);
+
+  const filteredRecords = React.useMemo(() => {
+    if (!searchValue) return availableRecords;
+    const searchLower = searchValue.toLowerCase();
+    return availableRecords.filter((record) =>
+      record.name.toLowerCase().includes(searchLower)
+    );
+  }, [availableRecords, searchValue]);
+
+  const onValueChange = React.useCallback(
+    (recordId: string) => {
+      if (readOnly) return;
+      const newValues = selectedValues.includes(recordId)
+        ? selectedValues.filter((v) => v !== recordId)
+        : [...selectedValues, recordId];
+
+      setSelectedValues(newValues);
+      tableMeta?.onDataUpdate?.({ rowIndex, columnId, value: newValues });
+      setSearchValue("");
+      queueMicrotask(() => inputRef.current?.focus());
+    },
+    [selectedValues, tableMeta, rowIndex, columnId, readOnly]
+  );
+
+  const removeValue = React.useCallback(
+    (valueToRemove: string, event?: React.MouseEvent) => {
+      if (readOnly) return;
+      event?.stopPropagation();
+      event?.preventDefault();
+      const newValues = selectedValues.filter((v) => v !== valueToRemove);
+      setSelectedValues(newValues);
+      tableMeta?.onDataUpdate?.({ rowIndex, columnId, value: newValues });
+      setTimeout(() => inputRef.current?.focus(), 0);
+    },
+    [selectedValues, tableMeta, rowIndex, columnId, readOnly]
+  );
+
+  const clearAll = React.useCallback(() => {
+    if (readOnly) return;
+    setSelectedValues([]);
+    tableMeta?.onDataUpdate?.({ rowIndex, columnId, value: [] });
+    queueMicrotask(() => inputRef.current?.focus());
+  }, [tableMeta, rowIndex, columnId, readOnly]);
+
+  const onOpenChange = React.useCallback(
+    (open: boolean) => {
+      if (open && !readOnly) {
+        tableMeta?.onCellEditingStart?.(rowIndex, columnId);
+      } else {
+        setSearchValue("");
+        tableMeta?.onCellEditingStop?.();
+      }
+    },
+    [tableMeta, rowIndex, columnId, readOnly]
+  );
+
+  const onOpenAutoFocus: NonNullable<
+    React.ComponentProps<typeof PopoverContent>["onOpenAutoFocus"]
+  > = React.useCallback((event) => {
+    event.preventDefault();
+    inputRef.current?.focus();
+  }, []);
+
+  const onWrapperKeyDown = React.useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (isEditing && event.key === "Escape") {
+        event.preventDefault();
+        setSelectedValues(cellValue);
+        setSearchValue("");
+        tableMeta?.onCellEditingStop?.();
+      } else if (!isEditing && isFocused && event.key === "Tab") {
+        event.preventDefault();
+        setSearchValue("");
+        tableMeta?.onCellEditingStop?.({
+          direction: event.shiftKey ? "left" : "right",
+        });
+      }
+    },
+    [isEditing, isFocused, cellValue, tableMeta]
+  );
+
+  const onInputKeyDown = React.useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (
+        event.key === "Backspace" &&
+        searchValue === "" &&
+        selectedValues.length > 0
+      ) {
+        event.preventDefault();
+        const lastValue = selectedValues[selectedValues.length - 1];
+        if (lastValue) {
+          removeValue(lastValue);
+        }
+      }
+      if (event.key === "Escape") {
+        event.stopPropagation();
+      }
+    },
+    [searchValue, selectedValues, removeValue]
+  );
+
+  const displayLabels = selectedValues
+    .map((val) => ({
+      id: val,
+      name: resolvedRecordsData?.[val]?.name ?? "Loading...",
+      entitySlug: resolvedRecordsData?.[val]?.entitySlug ?? targetEntitySlug,
+    }))
+    .filter(Boolean);
+
+  const lineCount = getLineCount(rowHeight);
+
+  const { visibleItems: visibleLabels, hiddenCount: hiddenBadgeCount } =
+    useBadgeOverflow({
+      items: displayLabels,
+      getLabel: (item) => item.name,
+      containerRef,
+      lineCount,
+    });
+
+  return (
+    <DataGridCellWrapper<TData>
+      cell={cell}
+      columnId={columnId}
+      isActiveSearchMatch={isActiveSearchMatch}
+      isEditing={isEditing}
+      isFocused={isFocused}
+      isSearchMatch={isSearchMatch}
+      isSelected={isSelected}
+      onKeyDown={onWrapperKeyDown}
+      readOnly={readOnly}
+      ref={containerRef}
+      rowHeight={rowHeight}
+      rowIndex={rowIndex}
+      tableMeta={tableMeta}
+    >
+      {isEditing ? (
+        <Popover onOpenChange={onOpenChange} open={isEditing}>
+          <PopoverAnchor asChild>
+            <div className="absolute inset-0" />
+          </PopoverAnchor>
+          <PopoverContent
+            align="start"
+            className="w-[300px] rounded-none p-0"
+            data-grid-cell-editor=""
+            onOpenAutoFocus={onOpenAutoFocus}
+            sideOffset={sideOffset}
+          >
+            <Command className="**:data-[slot=command-input-wrapper]:h-auto **:data-[slot=command-input-wrapper]:border-none **:data-[slot=command-input-wrapper]:p-0 [&_[data-slot=command-input-wrapper]_svg]:hidden">
+              <div className="flex min-h-9 flex-wrap items-center gap-1 border-b px-3 py-1.5">
+                {selectedValues.map((recordId) => {
+                  const record = resolvedRecordsData?.[recordId];
+                  const label = record?.name ?? "Loading...";
+
+                  return (
+                    <Badge
+                      className="gap-1 px-1.5 py-px"
+                      key={recordId}
+                      variant="secondary"
+                    >
+                      {label}
+                      <button
+                        onClick={(event) => removeValue(recordId, event)}
+                        onPointerDown={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                        }}
+                        type="button"
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </Badge>
+                  );
+                })}
+                <CommandInput
+                  className="ml-1 flex-1 border-none p-0 text-sm shadow-none outline-none placeholder:text-muted-foreground focus:ring-0"
+                  onKeyDown={onInputKeyDown}
+                  onValueChange={setSearchValue}
+                  placeholder={
+                    selectedValues.length > 0 ? "" : "Search records..."
+                  }
+                  ref={inputRef}
+                  value={searchValue}
+                />
+              </div>
+              <CommandList>
+                <CommandEmpty>No records found.</CommandEmpty>
+                {selectedValues.length > 0 && (
+                  <>
+                    <CommandGroup>
+                      <CommandItem onSelect={clearAll} value="__clear_all__">
+                        <X className="mr-2 size-4" />
+                        Clear all
+                      </CommandItem>
+                    </CommandGroup>
+                    <CommandSeparator />
+                  </>
+                )}
+                <CommandGroup>
+                  {filteredRecords.map((record) => (
+                    <CommandItem
+                      key={record.id}
+                      onSelect={() => onValueChange(record.id)}
+                      value={record.id}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 size-4",
+                          selectedValues.includes(record.id)
+                            ? "opacity-100"
+                            : "opacity-0"
+                        )}
+                      />
+                      {record.name}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+      ) : displayLabels.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-1 overflow-hidden">
+          {visibleLabels.map((item) => (
+            <a
+              className="inline-flex"
+              href={`/entities/${item.entitySlug}`}
+              key={item.id}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Badge
+                className="px-1.5 py-px text-primary underline-offset-4 hover:underline"
+                data-slot="grid-cell-content"
+                variant="secondary"
+              >
+                {item.name}
+              </Badge>
+            </a>
+          ))}
+          {hiddenBadgeCount > 0 && (
+            <Badge
+              className="px-1.5 py-px text-muted-foreground"
+              variant="outline"
+            >
+              +{hiddenBadgeCount}
+            </Badge>
+          )}
+        </div>
+      ) : null}
+    </DataGridCellWrapper>
+  );
+}
+
+export function RecordLinkCell<TData>({
+  cell,
+  tableMeta,
+  rowIndex,
+  columnId,
+  rowHeight,
+  isEditing,
+  isFocused,
+  isSelected,
+  isSearchMatch,
+  isActiveSearchMatch,
+  readOnly,
+}: DataGridCellProps<TData>) {
+  const initialValue = cell.getValue() as string;
+  const [value, setValue] = React.useState(initialValue);
+  const cellRef = React.useRef<HTMLDivElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const lastSavedValueRef = React.useRef(initialValue);
+
+  const cellOpts = cell.column.columnDef.meta?.cell;
+  const entitySlug =
+    cellOpts?.variant === "record-link" ? cellOpts.entitySlug : "";
+
+  // Get the row ID for the link
+  const row = cell.row.original as { id?: string };
+  const recordId = row?.id ?? "";
+
+  const prevInitialValueRef = React.useRef(initialValue);
+  if (initialValue !== prevInitialValueRef.current) {
+    prevInitialValueRef.current = initialValue;
+    lastSavedValueRef.current = initialValue;
+    setValue(initialValue);
+    if (cellRef.current && !isEditing) {
+      cellRef.current.textContent = initialValue;
+    }
+  }
+
+  const debouncedSave = useDebouncedCallback((newValue: string) => {
+    if (!readOnly && newValue !== lastSavedValueRef.current) {
+      tableMeta?.onDataUpdate?.({ rowIndex, columnId, value: newValue });
+      lastSavedValueRef.current = newValue;
+    }
+  }, 500);
+
+  const onBlur = React.useCallback(() => {
+    const currentValue = cellRef.current?.textContent ?? "";
+    if (!readOnly && currentValue !== lastSavedValueRef.current) {
+      tableMeta?.onDataUpdate?.({ rowIndex, columnId, value: currentValue });
+      lastSavedValueRef.current = currentValue;
+    }
+    tableMeta?.onCellEditingStop?.();
+  }, [tableMeta, rowIndex, columnId, readOnly]);
+
+  const onInput = React.useCallback(
+    (event: React.FormEvent<HTMLDivElement>) => {
+      const currentValue = event.currentTarget.textContent ?? "";
+      setValue(currentValue);
+      debouncedSave(currentValue);
+    },
+    [debouncedSave]
+  );
+
+  const onWrapperKeyDown = React.useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (isEditing) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          const currentValue = cellRef.current?.textContent ?? "";
+          if (currentValue !== lastSavedValueRef.current) {
+            tableMeta?.onDataUpdate?.({
+              rowIndex,
+              columnId,
+              value: currentValue,
+            });
+            lastSavedValueRef.current = currentValue;
+          }
+          tableMeta?.onCellEditingStop?.({ moveToNextRow: true });
+        } else if (event.key === "Tab") {
+          event.preventDefault();
+          const currentValue = cellRef.current?.textContent ?? "";
+          if (currentValue !== lastSavedValueRef.current) {
+            tableMeta?.onDataUpdate?.({
+              rowIndex,
+              columnId,
+              value: currentValue,
+            });
+            lastSavedValueRef.current = currentValue;
+          }
+          tableMeta?.onCellEditingStop?.({
+            direction: event.shiftKey ? "left" : "right",
+          });
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          setValue(initialValue);
+          if (cellRef.current) {
+            cellRef.current.textContent = initialValue;
+          }
+          cellRef.current?.blur();
+        }
+      } else if (
+        isFocused &&
+        event.key.length === 1 &&
+        !event.ctrlKey &&
+        !event.metaKey
+      ) {
+        setValue(event.key);
+
+        queueMicrotask(() => {
+          if (cellRef.current && cellRef.current.contentEditable === "true") {
+            cellRef.current.textContent = event.key;
+            const range = document.createRange();
+            const selection = window.getSelection();
+            range.selectNodeContents(cellRef.current);
+            range.collapse(false);
+            selection?.removeAllRanges();
+            selection?.addRange(range);
+          }
+        });
+      }
+    },
+    [isEditing, isFocused, initialValue, tableMeta, rowIndex, columnId]
+  );
+
+  React.useEffect(() => {
+    if (isEditing && cellRef.current) {
+      cellRef.current.focus();
+
+      if (!cellRef.current.textContent && value) {
+        cellRef.current.textContent = value;
+      }
+
+      if (cellRef.current.textContent) {
+        const range = document.createRange();
+        const selection = window.getSelection();
+        range.selectNodeContents(cellRef.current);
+        range.collapse(false);
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+      }
+    }
+  }, [isEditing, value]);
+
+  const displayValue = isEditing ? "" : (value ?? "");
+  const href = `/entities/${entitySlug}/${recordId}`;
+
+  return (
+    <DataGridCellWrapper<TData>
+      cell={cell}
+      columnId={columnId}
+      isActiveSearchMatch={isActiveSearchMatch}
+      isEditing={isEditing}
+      isFocused={isFocused}
+      isSearchMatch={isSearchMatch}
+      isSelected={isSelected}
+      onKeyDown={onWrapperKeyDown}
+      readOnly={readOnly}
+      ref={containerRef}
+      rowHeight={rowHeight}
+      rowIndex={rowIndex}
+      tableMeta={tableMeta}
+    >
+      {isEditing ? (
+        <div
+          className={cn("size-full overflow-hidden outline-none", {
+            "whitespace-nowrap **:inline **:whitespace-nowrap [&_br]:hidden":
+              isEditing,
+          })}
+          contentEditable={isEditing}
+          data-slot="grid-cell-content"
+          onBlur={onBlur}
+          onInput={onInput}
+          ref={cellRef}
+          role="textbox"
+          suppressContentEditableWarning
+          tabIndex={-1}
+        >
+          {displayValue}
+        </div>
+      ) : displayValue ? (
+        <a
+          className="text-primary underline-offset-2 hover:underline"
+          data-slot="grid-cell-content"
+          href={href}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {displayValue}
+        </a>
+      ) : (
+        <div data-slot="grid-cell-content" />
+      )}
     </DataGridCellWrapper>
   );
 }

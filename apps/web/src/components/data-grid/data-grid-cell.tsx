@@ -8,6 +8,9 @@ import {
   LongTextCell,
   MultiSelectCell,
   NumberCell,
+  RecordLinkCell,
+  RelationCell,
+  RelationMultiCell,
   SelectCell,
   ShortTextCell,
   UrlCell,
@@ -89,6 +92,15 @@ function DataGridCellImpl<TData>({
       break;
     case "file":
       Comp = FileCell;
+      break;
+    case "relation":
+      Comp = RelationCell;
+      break;
+    case "relation-multi":
+      Comp = RelationMultiCell;
+      break;
+    case "record-link":
+      Comp = RecordLinkCell;
       break;
 
     default:

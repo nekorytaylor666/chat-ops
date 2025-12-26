@@ -18,22 +18,22 @@ import {
 
 const rowHeights = [
   {
-    label: "Short",
+    label: "Короткая",
     value: "short" as const,
     icon: MinusIcon,
   },
   {
-    label: "Medium",
+    label: "Средняя",
     value: "medium" as const,
     icon: EqualIcon,
   },
   {
-    label: "Tall",
+    label: "Высокая",
     value: "tall" as const,
     icon: AlignVerticalSpaceAroundIcon,
   },
   {
-    label: "Extra Tall",
+    label: "Очень высокая",
     value: "extra-tall" as const,
     icon: ChevronsDownUpIcon,
   },
@@ -56,7 +56,7 @@ export function DataGridRowHeightMenu<TData>({
   const selectedRowHeight = React.useMemo(
     () =>
       rowHeights.find((opt) => opt.value === rowHeight) ?? {
-        label: "Short",
+        label: "Короткая",
         value: "short" as const,
         icon: MinusIcon,
       },
@@ -70,7 +70,7 @@ export function DataGridRowHeightMenu<TData>({
       value={rowHeight}
     >
       <SelectTrigger className="[&_svg:nth-child(2)]:hidden" size="sm">
-        <SelectValue placeholder="Row height">
+        <SelectValue placeholder="Высота строки">
           <selectedRowHeight.icon />
           {selectedRowHeight.label}
         </SelectValue>

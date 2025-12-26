@@ -58,7 +58,7 @@ export function DataGridViewMenu<TData>({
           variant="outline"
         >
           <Settings2 className="text-muted-foreground" />
-          View
+          Вид
         </Button>
       </PopoverTrigger>
       <PopoverContent
@@ -67,9 +67,9 @@ export function DataGridViewMenu<TData>({
         {...props}
       >
         <Command>
-          <CommandInput placeholder="Search columns..." />
+          <CommandInput placeholder="Поиск колонок..." />
           <CommandList>
-            <CommandEmpty>No columns found.</CommandEmpty>
+            <CommandEmpty>Колонки не найдены.</CommandEmpty>
             <CommandGroup>
               {columns.map((column) => (
                 <CommandItem

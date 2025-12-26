@@ -195,10 +195,7 @@ function DataGridRowImpl<TData>({
       role="row"
       tabIndex={-1}
       {...props}
-      className={cn(
-        "absolute flex w-full border-b will-change-transform",
-        className
-      )}
+      className={cn("absolute flex w-full will-change-transform", className)}
       ref={rowRef}
       style={{
         height: `${getRowHeightValue(rowHeight)}px`,
@@ -208,6 +205,18 @@ function DataGridRowImpl<TData>({
     >
       {visibleCells.map((cell, colIndex) => {
         const columnId = cell.column.id;
+
+        // Render empty spacer for add-column (header-only, no borders)
+        if (columnId === "add-column") {
+          return (
+            <div
+              key={cell.id}
+              style={{
+                width: `calc(var(--col-${columnId}-size) * 1px)`,
+              }}
+            />
+          );
+        }
 
         const isCellFocused =
           focusedCell?.rowIndex === virtualRowIndex &&
@@ -228,6 +237,7 @@ function DataGridRowImpl<TData>({
             className={cn({
               grow: stretchColumns && columnId !== "select",
               "border-e": columnId !== "select",
+              "border-b": true,
             })}
             data-highlighted={isCellFocused ? "" : undefined}
             data-slot="grid-cell"

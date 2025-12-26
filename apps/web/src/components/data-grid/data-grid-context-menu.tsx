@@ -176,7 +176,7 @@ function ContextMenuImpl<TData>({
     onDataUpdate?.(updates);
 
     toast.success(
-      `${updates.length} cell${updates.length !== 1 ? "s" : ""} cleared`
+      `${updates.length} ${updates.length !== 1 ? "ячеек" : "ячейка"} очищено`
     );
   }, [propsRef]);
 
@@ -200,7 +200,7 @@ function ContextMenuImpl<TData>({
 
     await onRowsDelete?.(rowIndicesArray);
 
-    toast.success(`${rowCount} row${rowCount !== 1 ? "s" : ""} deleted`);
+    toast.success(`${rowCount} ${rowCount !== 1 ? "строк" : "строка"} удалено`);
   }, [propsRef]);
 
   return (
@@ -217,22 +217,22 @@ function ContextMenuImpl<TData>({
       >
         <DropdownMenuItem onSelect={onCopy}>
           <CopyIcon />
-          Copy
+          Копировать
         </DropdownMenuItem>
         <DropdownMenuItem disabled={tableMeta?.readOnly} onSelect={onCut}>
           <ScissorsIcon />
-          Cut
+          Вырезать
         </DropdownMenuItem>
         <DropdownMenuItem disabled={tableMeta?.readOnly} onSelect={onClear}>
           <EraserIcon />
-          Clear
+          Очистить
         </DropdownMenuItem>
         {onRowsDelete && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={onDelete} variant="destructive">
               <Trash2Icon />
-              Delete rows
+              Удалить строки
             </DropdownMenuItem>
           </>
         )}

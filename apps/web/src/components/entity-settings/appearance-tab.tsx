@@ -141,9 +141,9 @@ export function AppearanceTab({ entity }: AppearanceTabProps) {
       {/* Preview */}
       <Card>
         <CardHeader>
-          <CardTitle>Preview</CardTitle>
+          <CardTitle>Предпросмотр</CardTitle>
           <CardDescription>
-            See how your entity will appear in the sidebar
+            Посмотрите, как ваша сущность будет выглядеть в боковой панели
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -157,7 +157,7 @@ export function AppearanceTab({ entity }: AppearanceTabProps) {
             <div>
               <p className="font-medium">{entity.pluralName}</p>
               <p className="text-muted-foreground text-sm">
-                {entity.attributes.length} attributes
+                {entity.attributes.length} атрибутов
               </p>
             </div>
           </div>
@@ -167,8 +167,8 @@ export function AppearanceTab({ entity }: AppearanceTabProps) {
       {/* Icon Selection */}
       <Card>
         <CardHeader>
-          <CardTitle>Icon</CardTitle>
-          <CardDescription>Choose an icon for this entity</CardDescription>
+          <CardTitle>Иконка</CardTitle>
+          <CardDescription>Выберите иконку для этой сущности</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-8 gap-2">
@@ -193,8 +193,8 @@ export function AppearanceTab({ entity }: AppearanceTabProps) {
       {/* Color Selection */}
       <Card>
         <CardHeader>
-          <CardTitle>Color</CardTitle>
-          <CardDescription>Choose a color for the entity icon</CardDescription>
+          <CardTitle>Цвет</CardTitle>
+          <CardDescription>Выберите цвет для иконки сущности</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-9 gap-2">
@@ -214,7 +214,7 @@ export function AppearanceTab({ entity }: AppearanceTabProps) {
 
           <div className="flex items-center gap-3">
             <Label className="shrink-0" htmlFor="customColor">
-              Custom color
+              Свой цвет
             </Label>
             <div className="flex flex-1 items-center gap-2">
               <div
@@ -239,7 +239,7 @@ export function AppearanceTab({ entity }: AppearanceTabProps) {
             {updateEntity.isPending && (
               <Loader2 className="size-4 animate-spin" />
             )}
-            Save changes
+            Сохранить изменения
           </Button>
         </div>
       )}

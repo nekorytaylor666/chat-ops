@@ -36,7 +36,7 @@ export default function SignUpForm({
             navigate({
               to: "/dashboard",
             });
-            toast.success("Sign up successful");
+            toast.success("Регистрация успешна");
           },
           onError: (error) => {
             toast.error(error.error.message || error.error.statusText);
@@ -46,9 +46,11 @@ export default function SignUpForm({
     },
     validators: {
       onSubmit: z.object({
-        name: z.string().min(2, "Name must be at least 2 characters"),
-        email: z.email("Invalid email address"),
-        password: z.string().min(8, "Password must be at least 8 characters"),
+        name: z.string().min(2, "Имя должно содержать минимум 2 символа"),
+        email: z.email("Неверный адрес электронной почты"),
+        password: z
+          .string()
+          .min(8, "Пароль должен содержать минимум 8 символов"),
       }),
     },
   });
@@ -59,7 +61,7 @@ export default function SignUpForm({
 
   return (
     <div className="mx-auto mt-10 w-full max-w-md p-6">
-      <h1 className="mb-6 text-center font-bold text-3xl">Create Account</h1>
+      <h1 className="mb-6 text-center font-bold text-3xl">Создать аккаунт</h1>
 
       <form
         className="space-y-4"
@@ -73,7 +75,7 @@ export default function SignUpForm({
           <form.Field name="name">
             {(field) => (
               <div className="space-y-2">
-                <Label htmlFor={field.name}>Name</Label>
+                <Label htmlFor={field.name}>Имя</Label>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -95,7 +97,7 @@ export default function SignUpForm({
           <form.Field name="email">
             {(field) => (
               <div className="space-y-2">
-                <Label htmlFor={field.name}>Email</Label>
+                <Label htmlFor={field.name}>Эл. почта</Label>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -118,7 +120,7 @@ export default function SignUpForm({
           <form.Field name="password">
             {(field) => (
               <div className="space-y-2">
-                <Label htmlFor={field.name}>Password</Label>
+                <Label htmlFor={field.name}>Пароль</Label>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -144,7 +146,7 @@ export default function SignUpForm({
               disabled={!state.canSubmit || state.isSubmitting}
               type="submit"
             >
-              {state.isSubmitting ? "Submitting..." : "Sign Up"}
+              {state.isSubmitting ? "Регистрация..." : "Зарегистрироваться"}
             </Button>
           )}
         </form.Subscribe>
@@ -156,7 +158,7 @@ export default function SignUpForm({
           onClick={onSwitchToSignIn}
           variant="link"
         >
-          Already have an account? Sign In
+          Уже есть аккаунт? Войти
         </Button>
       </div>
     </div>

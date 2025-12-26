@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Building2, ChevronDown, Plus, Settings2, Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import type { AttributeType } from "@/components/data-grid/add-column-dropdown";
 import {
   DataGridSkeleton,
   DataGridSkeletonGrid,
@@ -9,6 +10,8 @@ import {
 } from "@/components/data-grid/data-grid-skeleton";
 import { EmptyEntitiesState } from "@/components/empty-entities-state";
 import { EntityGrid } from "@/components/entity-grid";
+import { AddRecordDialog } from "@/components/entity-grid/add-record-dialog";
+import { AttributeModal } from "@/components/entity-settings/attribute-modal";
 import { PageHeader, PageToolbar } from "@/components/header";
 import { Button } from "@/components/ui/button";
 import {
@@ -65,6 +68,10 @@ function EntityPage() {
   }, [records]);
 
   const [localData, setLocalData] = useState<RecordData[]>([]);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [attributeModalOpen, setAttributeModalOpen] = useState(false);
+  const [selectedAttributeType, setSelectedAttributeType] =
+    useState<AttributeType>("short-text");
 
   useEffect(() => {
     setLocalData(data);
@@ -72,31 +79,47 @@ function EntityPage() {
 
   const columns = useMemo(() => {
     if (!currentEntity?.attributes) return [];
-    return generateColumnsFromAttributes(currentEntity.attributes);
+    return generateColumnsFromAttributes(currentEntity.attributes, entitySlug);
+  }, [currentEntity?.attributes, entitySlug]);
+
+  // Key to force grid re-render when columns change
+  const gridKey = useMemo(() => {
+    if (!currentEntity?.attributes) return "empty";
+    return currentEntity.attributes.map((a) => a.id).join("-");
   }, [currentEntity?.attributes]);
 
-  const handleRowAdd = useCallback(() => {
-    if (!currentEntity) return { rowIndex: 0, columnId: "name" };
+  const handleOpenAddDialog = useCallback(() => {
+    setAddDialogOpen(true);
+    return null;
+  }, []);
 
-    const newId = `temp-${Date.now()}`;
-    const newRecord: RecordData = {
-      id: newId,
-      values: { name: "" },
-      name: "",
-    };
+  const handleAddAttribute = useCallback((type: AttributeType) => {
+    setSelectedAttributeType(type);
+    setAttributeModalOpen(true);
+  }, []);
 
-    setLocalData((prev) => [...prev, newRecord]);
+  const handleRecordCreate = useCallback(
+    (values: Record<string, unknown>) => {
+      if (!currentEntity) return;
 
-    createRecord.mutate({
-      entityDefinitionId: currentEntity.id,
-      values: { name: "" },
-    });
+      const newId = `temp-${Date.now()}`;
+      const newRecord: RecordData = {
+        id: newId,
+        values,
+        ...values,
+      };
 
-    return {
-      rowIndex: localData.length,
-      columnId: "name",
-    };
-  }, [currentEntity, localData.length, createRecord]);
+      setLocalData((prev) => [...prev, newRecord]);
+
+      createRecord.mutate({
+        entityDefinitionId: currentEntity.id,
+        values,
+      });
+
+      setAddDialogOpen(false);
+    },
+    [currentEntity, createRecord]
+  );
 
   const handleRowsDelete = useCallback(
     (rows: RecordData[]) => {
@@ -115,34 +138,50 @@ function EntityPage() {
 
   const handleDataChange = useCallback(
     (newData: RecordData[] | ((prev: RecordData[]) => RecordData[])) => {
-      const updatedData =
-        typeof newData === "function" ? newData(localData) : newData;
+      setLocalData((currentLocalData) => {
+        const updatedData =
+          typeof newData === "function" ? newData(currentLocalData) : newData;
 
-      for (const newRecord of updatedData) {
-        const oldRecord = localData.find((r) => r.id === newRecord.id);
-        if (oldRecord && !newRecord.id.startsWith("temp-")) {
-          const oldValues = oldRecord.values;
-          const newValues = newRecord.values;
-          const changedValues: Record<string, unknown> = {};
+        for (const newRecord of updatedData) {
+          const oldRecord = currentLocalData.find((r) => r.id === newRecord.id);
+          if (oldRecord && !newRecord.id.startsWith("temp-")) {
+            const changedValues: Record<string, unknown> = {};
 
-          for (const key of Object.keys(newValues)) {
-            if (newValues[key] !== oldValues[key]) {
-              changedValues[key] = newValues[key];
+            // Check top-level properties (where the grid updates values)
+            // Skip 'id' and 'values' as they are metadata
+            for (const key of Object.keys(newRecord)) {
+              if (key === "id" || key === "values") continue;
+              const newValue = newRecord[key];
+              const oldValue = oldRecord[key];
+
+              // Handle comparison for different types including numbers
+              const hasChanged =
+                newValue !== oldValue &&
+                !(
+                  typeof newValue === "number" &&
+                  typeof oldValue === "number" &&
+                  Number.isNaN(newValue) &&
+                  Number.isNaN(oldValue)
+                );
+
+              if (hasChanged) {
+                changedValues[key] = newValue;
+              }
+            }
+
+            if (Object.keys(changedValues).length > 0) {
+              updateRecord.mutate({
+                recordId: newRecord.id,
+                values: changedValues,
+              });
             }
           }
-
-          if (Object.keys(changedValues).length > 0) {
-            updateRecord.mutate({
-              recordId: newRecord.id,
-              values: changedValues,
-            });
-          }
         }
-      }
 
-      setLocalData(updatedData);
+        return updatedData;
+      });
     },
-    [localData, updateRecord]
+    [updateRecord]
   );
 
   const handleEntityChange = useCallback(
@@ -158,7 +197,7 @@ function EntityPage() {
   if (entitiesLoading) {
     return (
       <div className="flex h-full flex-col">
-        <PageHeader count={0} icon={Building2} title="Loading..." />
+        <PageHeader count={0} icon={Building2} title="Загрузка..." />
         <PageToolbar />
         <div className="min-h-0 flex-1 px-4">
           <DataGridSkeleton>
@@ -208,7 +247,7 @@ function EntityPage() {
       </DropdownMenu>
       <Button className="font-normal" size="sm" variant="ghost">
         <Settings2 className="text-muted-foreground" />
-        View settings
+        Настройки вида
       </Button>
     </>
   );
@@ -221,17 +260,17 @@ function EntityPage() {
           to="/entities/$entitySlug/settings"
         >
           <Settings2 className="text-muted-foreground" />
-          Entity Settings
+          Настройки сущности
         </Link>
       </Button>
       <Button className="font-normal" size="sm" variant="ghost">
         <Upload className="text-muted-foreground" />
-        Import / Export
+        Импорт / Экспорт
         <ChevronDown className="text-muted-foreground" />
       </Button>
-      <Button onClick={handleRowAdd} size="sm">
+      <Button onClick={handleOpenAddDialog} size="sm">
         <Plus />
-        Add {currentEntity.singularName}
+        Добавить {currentEntity.singularName}
       </Button>
     </>
   );
@@ -254,12 +293,29 @@ function EntityPage() {
             columns={columns}
             compactHeader
             data={localData}
+            key={gridKey}
+            onAddAttribute={handleAddAttribute}
             onDataChange={handleDataChange}
-            onRowAdd={handleRowAdd}
+            onRowAdd={handleOpenAddDialog}
             onRowsDelete={handleRowsDelete}
           />
         )}
       </div>
+
+      <AddRecordDialog
+        entity={currentEntity}
+        isPending={createRecord.isPending}
+        onOpenChange={setAddDialogOpen}
+        onSubmit={handleRecordCreate}
+        open={addDialogOpen}
+      />
+
+      <AttributeModal
+        defaultType={selectedAttributeType}
+        entityId={currentEntity.id}
+        onOpenChange={setAttributeModalOpen}
+        open={attributeModalOpen}
+      />
     </div>
   );
 }

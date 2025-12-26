@@ -45,8 +45,8 @@ const SORT_SHORTCUT_KEY = "s";
 const REMOVE_SORT_SHORTCUTS = ["backspace", "delete"];
 
 const SORT_ORDERS = [
-  { label: "Asc", value: "asc" },
-  { label: "Desc", value: "desc" },
+  { label: "По возрастанию", value: "asc" },
+  { label: "По убыванию", value: "desc" },
 ];
 
 interface DataGridSortMenuProps<TData>
@@ -183,7 +183,7 @@ export function DataGridSortMenu<TData>({
             variant="outline"
           >
             <ArrowDownUp className="text-muted-foreground" />
-            Sort
+            Сортировка
             {sorting.length > 0 && (
               <Badge
                 className="h-[18.24px] rounded-[3.2px] px-[5.12px] font-mono font-normal text-[10.4px]"
@@ -203,7 +203,9 @@ export function DataGridSortMenu<TData>({
         >
           <div className="flex flex-col gap-1">
             <h4 className="font-medium leading-none" id={labelId}>
-              {sorting.length > 0 ? "Sort by" : "No sorting applied"}
+              {sorting.length > 0
+                ? "Сортировать по"
+                : "Сортировка не применена"}
             </h4>
             <p
               className={cn(
@@ -213,8 +215,8 @@ export function DataGridSortMenu<TData>({
               id={descriptionId}
             >
               {sorting.length > 0
-                ? "Modify sorting to organize your rows."
-                : "Add sorting to organize your rows."}
+                ? "Измените сортировку для упорядочивания строк."
+                : "Добавьте сортировку для упорядочивания строк."}
             </p>
           </div>
           {sorting.length > 0 && (
@@ -246,7 +248,7 @@ export function DataGridSortMenu<TData>({
               ref={addButtonRef}
               size="sm"
             >
-              Add sort
+              Добавить сортировку
             </Button>
             {sorting.length > 0 && (
               <Button
@@ -255,7 +257,7 @@ export function DataGridSortMenu<TData>({
                 size="sm"
                 variant="outline"
               >
-                Reset sorting
+                Сбросить сортировку
               </Button>
             )}
           </div>
@@ -349,9 +351,9 @@ function DataTableSortItem({
             id={fieldListboxId}
           >
             <Command>
-              <CommandInput placeholder="Search fields..." />
+              <CommandInput placeholder="Поиск полей..." />
               <CommandList>
-                <CommandEmpty>No fields found.</CommandEmpty>
+                <CommandEmpty>Поля не найдены.</CommandEmpty>
                 <CommandGroup>
                   {columns.map((column) => (
                     <CommandItem

@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as EntitiesIndexRouteImport } from './routes/entities/index'
 import { Route as EntitiesEntitySlugRouteRouteImport } from './routes/entities/$entitySlug/route'
 import { Route as EntitiesEntitySlugIndexRouteImport } from './routes/entities/$entitySlug/index'
+import { Route as EntitiesEntitySlugRecordIdRouteImport } from './routes/entities/$entitySlug/$recordId'
 import { Route as EntitiesEntitySlugSettingsRouteRouteImport } from './routes/entities/$entitySlug/settings/route'
 
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -53,6 +54,12 @@ const EntitiesEntitySlugIndexRoute = EntitiesEntitySlugIndexRouteImport.update({
   path: '/',
   getParentRoute: () => EntitiesEntitySlugRouteRoute,
 } as any)
+const EntitiesEntitySlugRecordIdRoute =
+  EntitiesEntitySlugRecordIdRouteImport.update({
+    id: '/$recordId',
+    path: '/$recordId',
+    getParentRoute: () => EntitiesEntitySlugRouteRoute,
+  } as any)
 const EntitiesEntitySlugSettingsRouteRoute =
   EntitiesEntitySlugSettingsRouteRouteImport.update({
     id: '/settings',
@@ -68,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/entities/$entitySlug': typeof EntitiesEntitySlugRouteRouteWithChildren
   '/entities/': typeof EntitiesIndexRoute
   '/entities/$entitySlug/settings': typeof EntitiesEntitySlugSettingsRouteRoute
+  '/entities/$entitySlug/$recordId': typeof EntitiesEntitySlugRecordIdRoute
   '/entities/$entitySlug/': typeof EntitiesEntitySlugIndexRoute
 }
 export interface FileRoutesByTo {
@@ -76,6 +84,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/entities': typeof EntitiesIndexRoute
   '/entities/$entitySlug/settings': typeof EntitiesEntitySlugSettingsRouteRoute
+  '/entities/$entitySlug/$recordId': typeof EntitiesEntitySlugRecordIdRoute
   '/entities/$entitySlug': typeof EntitiesEntitySlugIndexRoute
 }
 export interface FileRoutesById {
@@ -87,6 +96,7 @@ export interface FileRoutesById {
   '/entities/$entitySlug': typeof EntitiesEntitySlugRouteRouteWithChildren
   '/entities/': typeof EntitiesIndexRoute
   '/entities/$entitySlug/settings': typeof EntitiesEntitySlugSettingsRouteRoute
+  '/entities/$entitySlug/$recordId': typeof EntitiesEntitySlugRecordIdRoute
   '/entities/$entitySlug/': typeof EntitiesEntitySlugIndexRoute
 }
 export interface FileRouteTypes {
@@ -99,6 +109,7 @@ export interface FileRouteTypes {
     | '/entities/$entitySlug'
     | '/entities/'
     | '/entities/$entitySlug/settings'
+    | '/entities/$entitySlug/$recordId'
     | '/entities/$entitySlug/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/entities'
     | '/entities/$entitySlug/settings'
+    | '/entities/$entitySlug/$recordId'
     | '/entities/$entitySlug'
   id:
     | '__root__'
@@ -117,6 +129,7 @@ export interface FileRouteTypes {
     | '/entities/$entitySlug'
     | '/entities/'
     | '/entities/$entitySlug/settings'
+    | '/entities/$entitySlug/$recordId'
     | '/entities/$entitySlug/'
   fileRoutesById: FileRoutesById
 }
@@ -178,6 +191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EntitiesEntitySlugIndexRouteImport
       parentRoute: typeof EntitiesEntitySlugRouteRoute
     }
+    '/entities/$entitySlug/$recordId': {
+      id: '/entities/$entitySlug/$recordId'
+      path: '/$recordId'
+      fullPath: '/entities/$entitySlug/$recordId'
+      preLoaderRoute: typeof EntitiesEntitySlugRecordIdRouteImport
+      parentRoute: typeof EntitiesEntitySlugRouteRoute
+    }
     '/entities/$entitySlug/settings': {
       id: '/entities/$entitySlug/settings'
       path: '/settings'
@@ -190,12 +210,14 @@ declare module '@tanstack/react-router' {
 
 interface EntitiesEntitySlugRouteRouteChildren {
   EntitiesEntitySlugSettingsRouteRoute: typeof EntitiesEntitySlugSettingsRouteRoute
+  EntitiesEntitySlugRecordIdRoute: typeof EntitiesEntitySlugRecordIdRoute
   EntitiesEntitySlugIndexRoute: typeof EntitiesEntitySlugIndexRoute
 }
 
 const EntitiesEntitySlugRouteRouteChildren: EntitiesEntitySlugRouteRouteChildren =
   {
     EntitiesEntitySlugSettingsRouteRoute: EntitiesEntitySlugSettingsRouteRoute,
+    EntitiesEntitySlugRecordIdRoute: EntitiesEntitySlugRecordIdRoute,
     EntitiesEntitySlugIndexRoute: EntitiesEntitySlugIndexRoute,
   }
 

@@ -3,11 +3,13 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import * as React from "react";
 
+import type { AttributeType } from "@/components/data-grid/add-column-dropdown";
 import { DataGrid } from "@/components/data-grid/data-grid";
 import { DataGridKeyboardShortcuts } from "@/components/data-grid/data-grid-keyboard-shortcuts";
 import { getDataGridSelectColumn } from "@/components/data-grid/data-grid-select-column";
 import { EntityGridHeader } from "@/components/entity-grid/entity-grid-header";
 import { useDataGrid } from "@/hooks/use-data-grid";
+import { ADD_COLUMN_ID } from "@/lib/columns-from-attributes";
 import { cn } from "@/lib/utils";
 import type {
   CellPosition,
@@ -61,6 +63,9 @@ interface EntityGridProps<TData> {
   onViewSettings?: () => void;
   headerActions?: React.ReactNode;
 
+  // Add column props
+  onAddAttribute?: (type: AttributeType) => void;
+
   className?: string;
 }
 
@@ -93,13 +98,30 @@ export function EntityGrid<TData>({
   onViewChange,
   onViewSettings,
   headerActions,
+  onAddAttribute,
   className,
 }: EntityGridProps<TData>) {
-  // Prepend select column
-  const columns = React.useMemo<ColumnDef<TData>[]>(
-    () => [getDataGridSelectColumn<TData>(), ...columnsProp],
-    [columnsProp]
-  );
+  // Prepend select column, append add column if onAddAttribute is provided
+  const columns = React.useMemo<ColumnDef<TData>[]>(() => {
+    const cols: ColumnDef<TData>[] = [
+      getDataGridSelectColumn<TData>(),
+      ...columnsProp,
+    ];
+
+    if (onAddAttribute) {
+      cols.push({
+        id: ADD_COLUMN_ID,
+        header: "add-column",
+        size: 140,
+        enableHiding: false,
+        enableSorting: false,
+        enableResizing: false,
+        enablePinning: false,
+      });
+    }
+
+    return cols;
+  }, [columnsProp, onAddAttribute]);
 
   const dataGrid = useDataGrid({
     data,
@@ -139,7 +161,12 @@ export function EntityGrid<TData>({
           {headerActions}
         </EntityGridHeader>
       )}
-      <DataGrid {...dataGrid} height={height} stretchColumns={stretchColumns} />
+      <DataGrid
+        {...dataGrid}
+        height={height}
+        onAddAttribute={onAddAttribute}
+        stretchColumns={stretchColumns}
+      />
       <DataGridKeyboardShortcuts enableSearch={enableSearch} />
     </div>
   );

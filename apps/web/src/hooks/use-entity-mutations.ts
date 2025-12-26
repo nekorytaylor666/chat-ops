@@ -190,10 +190,23 @@ export function useAddAttribute() {
           trpc.entity.list.queryKey({ organizationId: organizationId ?? "" })
         );
 
+        // Generate slug matching backend logic (only a-z0-9, with deterministic fallback for non-ASCII)
+        const baseSlug = newAttr.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "");
+        // Use char codes for deterministic slug that matches backend
+        const charCodeSlug = newAttr.name
+          .split("")
+          .map((c) => c.charCodeAt(0).toString(36))
+          .join("")
+          .slice(0, 20);
+        const generatedSlug = baseSlug || `attr-${charCodeSlug}`;
+
         const optimisticAttr: Attribute = {
           id: `temp-${Date.now()}`,
           entityDefinitionId: newAttr.entityDefinitionId,
-          slug: newAttr.name.toLowerCase().replace(/\s+/g, "-"),
+          slug: generatedSlug,
           name: newAttr.name,
           description: newAttr.description ?? null,
           type: newAttr.type,

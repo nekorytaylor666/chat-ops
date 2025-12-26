@@ -5,10 +5,23 @@ import { z } from "zod";
 import { protectedProcedure, router } from "../index";
 
 function generateSlug(name: string): string {
-  return name
+  const slug = name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
+
+  // If slug is empty (e.g., for non-ASCII names like Cyrillic), generate a deterministic fallback
+  // Use char codes to create a consistent slug that matches between frontend and backend
+  if (!slug) {
+    const charCodeSlug = name
+      .split("")
+      .map((c) => c.charCodeAt(0).toString(36))
+      .join("")
+      .slice(0, 20);
+    return `attr-${charCodeSlug}`;
+  }
+
+  return slug;
 }
 
 async function requireOrganizationAccess(
@@ -55,6 +68,8 @@ const attributeTypeSchema = z.enum([
   "checkbox",
   "date",
   "url",
+  "relation",
+  "relation-multi",
 ]);
 
 const selectOptionSchema = z.object({
@@ -69,6 +84,8 @@ const attributeConfigSchema = z
     max: z.number().optional(),
     step: z.number().optional(),
     options: z.array(selectOptionSchema).optional(),
+    targetEntityId: z.string().uuid().optional(),
+    targetEntitySlug: z.string().optional(),
   })
   .optional();
 
@@ -300,6 +317,30 @@ export const entityRouter = router({
         ctx.session.user.id,
         ["owner", "admin", "member"]
       );
+
+      // Validate relation types have a valid target entity
+      if (input.type === "relation" || input.type === "relation-multi") {
+        if (!input.config?.targetEntityId) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Relation attributes require a target entity",
+          });
+        }
+
+        const targetEntity = await db.query.entityDefinition.findFirst({
+          where: eq(entityDefinition.id, input.config.targetEntityId),
+        });
+
+        if (
+          !targetEntity ||
+          targetEntity.organizationId !== entity.organizationId
+        ) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Target entity not found or not accessible",
+          });
+        }
+      }
 
       const existingAttrs = await db.query.attribute.findMany({
         where: eq(attribute.entityDefinitionId, input.entityDefinitionId),

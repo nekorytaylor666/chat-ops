@@ -2,6 +2,10 @@
 
 import { Plus } from "lucide-react";
 import * as React from "react";
+import {
+  AddColumnDropdown,
+  type AttributeType,
+} from "@/components/data-grid/add-column-dropdown";
 import { DataGridColumnHeader } from "@/components/data-grid/data-grid-column-header";
 import { DataGridContextMenu } from "@/components/data-grid/data-grid-context-menu";
 import { DataGridPasteDialog } from "@/components/data-grid/data-grid-paste-dialog";
@@ -9,6 +13,7 @@ import { DataGridRow } from "@/components/data-grid/data-grid-row";
 import { DataGridSearch } from "@/components/data-grid/data-grid-search";
 import { useAsRef } from "@/hooks/use-as-ref";
 import type { useDataGrid } from "@/hooks/use-data-grid";
+import { ADD_COLUMN_ID } from "@/lib/columns-from-attributes";
 import { flexRender, getCommonPinningStyles } from "@/lib/data-grid";
 import { cn } from "@/lib/utils";
 import type { Direction } from "@/types/data-grid";
@@ -21,6 +26,7 @@ interface DataGridProps<TData>
   dir?: Direction;
   height?: number;
   stretchColumns?: boolean;
+  onAddAttribute?: (type: AttributeType) => void;
 }
 
 export function DataGrid<TData>({
@@ -48,6 +54,7 @@ export function DataGrid<TData>({
   onRowAdd: onRowAddProp,
   height = 600,
   stretchColumns = false,
+  onAddAttribute,
   className,
   ...props
 }: DataGridProps<TData>) {
@@ -83,6 +90,33 @@ export function DataGrid<TData>({
     },
     [onRowAddRef]
   );
+
+  const renderHeaderContent = (
+    header: (typeof table.getHeaderGroups)[0] extends { headers: (infer H)[] }
+      ? H
+      : never
+  ) => {
+    if (header.isPlaceholder) return null;
+
+    // Render AddColumnDropdown for the add-column header
+    if (header.column.id === ADD_COLUMN_ID) {
+      return (
+        <AddColumnDropdown onCreateAttribute={onAddAttribute} table={table} />
+      );
+    }
+
+    // Render custom header function
+    if (typeof header.column.columnDef.header === "function") {
+      return (
+        <div className="size-full px-3 py-1.5">
+          {flexRender(header.column.columnDef.header, header.getContext())}
+        </div>
+      );
+    }
+
+    // Default: render DataGridColumnHeader
+    return <DataGridColumnHeader header={header} table={table} />;
+  };
 
   return (
     <div
@@ -134,6 +168,7 @@ export function DataGrid<TData>({
                   (sort) => sort.id === header.column.id
                 );
                 const isSortable = header.column.getCanSort();
+                const isAddColumn = header.column.id === ADD_COLUMN_ID;
 
                 return (
                   <div
@@ -148,8 +183,11 @@ export function DataGrid<TData>({
                             : undefined
                     }
                     className={cn("relative", {
-                      grow: stretchColumns && header.column.id !== "select",
-                      "border-e": header.column.id !== "select",
+                      grow:
+                        stretchColumns &&
+                        header.column.id !== "select" &&
+                        !isAddColumn,
+                      "border-e": header.column.id !== "select" && !isAddColumn,
                     })}
                     data-slot="grid-header-cell"
                     key={header.id}
@@ -160,17 +198,7 @@ export function DataGrid<TData>({
                     }}
                     tabIndex={-1}
                   >
-                    {header.isPlaceholder ? null : typeof header.column
-                        .columnDef.header === "function" ? (
-                      <div className="size-full px-3 py-1.5">
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                      </div>
-                    ) : (
-                      <DataGridColumnHeader header={header} table={table} />
-                    )}
+                    {renderHeaderContent(header)}
                   </div>
                 );
               })}

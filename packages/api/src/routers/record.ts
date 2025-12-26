@@ -214,4 +214,45 @@ export const recordRouter = router({
 
       return { success: true, deletedCount: input.recordIds.length };
     }),
+
+  resolveRelations: protectedProcedure
+    .input(
+      z.object({
+        recordIds: z.array(z.string().uuid()),
+      })
+    )
+    .query(async ({ input }) => {
+      if (input.recordIds.length === 0) {
+        return {};
+      }
+
+      const records = await db.query.entityRecord.findMany({
+        where: inArray(entityRecord.id, input.recordIds),
+        with: {
+          entityDefinition: true,
+        },
+      });
+
+      const result: Record<
+        string,
+        {
+          id: string;
+          name: string;
+          entityDefinitionId: string;
+          entitySlug: string;
+        }
+      > = {};
+
+      for (const record of records) {
+        const values = record.values as Record<string, unknown>;
+        result[record.id] = {
+          id: record.id,
+          name: (values?.name as string) ?? "Unnamed",
+          entityDefinitionId: record.entityDefinitionId,
+          entitySlug: record.entityDefinition?.slug ?? "",
+        };
+      }
+
+      return result;
+    }),
 });

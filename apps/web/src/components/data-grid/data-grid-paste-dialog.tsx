@@ -81,11 +81,10 @@ function PasteDialogImpl({
     <Dialog onOpenChange={onOpenChange} open={pasteDialog.open}>
       <DialogContent data-grid-popover="">
         <DialogHeader>
-          <DialogTitle>Do you want to add more rows?</DialogTitle>
+          <DialogTitle>Хотите добавить больше строк?</DialogTitle>
           <DialogDescription>
-            We need <strong>{pasteDialog.rowsNeeded}</strong> additional row
-            {pasteDialog.rowsNeeded !== 1 ? "s" : ""} to paste everything from
-            your clipboard.
+            Нам нужно <strong>{pasteDialog.rowsNeeded}</strong> дополнительных
+            строк для вставки всех данных из буфера обмена.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-3 py-1">
@@ -98,12 +97,11 @@ function PasteDialogImpl({
             />
             <div className="flex flex-col gap-1">
               <span className="font-medium text-sm leading-none">
-                Create new rows
+                Создать новые строки
               </span>
               <span className="text-muted-foreground text-sm">
-                Add {pasteDialog.rowsNeeded} new row
-                {pasteDialog.rowsNeeded !== 1 ? "s" : ""} to the table and paste
-                all data
+                Добавить {pasteDialog.rowsNeeded} новых строк в таблицу и
+                вставить все данные
               </span>
             </div>
           </label>
@@ -111,19 +109,19 @@ function PasteDialogImpl({
             <RadioItem name="expand-option" value="no-expand" />
             <div className="flex flex-col gap-1">
               <span className="font-medium text-sm leading-none">
-                Keep current rows
+                Оставить текущие строки
               </span>
               <span className="text-muted-foreground text-sm">
-                Paste only what fits in the existing rows
+                Вставить только то, что помещается в существующие строки
               </span>
             </div>
           </label>
         </div>
         <DialogFooter>
           <Button onClick={onCancel} variant="outline">
-            Cancel
+            Отмена
           </Button>
-          <Button onClick={onContinue}>Continue</Button>
+          <Button onClick={onContinue}>Продолжить</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

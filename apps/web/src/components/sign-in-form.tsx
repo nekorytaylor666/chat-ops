@@ -34,7 +34,7 @@ export default function SignInForm({
             navigate({
               to: "/entities",
             });
-            toast.success("Sign in successful");
+            toast.success("Вход выполнен успешно");
           },
           onError: (error) => {
             toast.error(error.error.message || error.error.statusText);
@@ -44,8 +44,10 @@ export default function SignInForm({
     },
     validators: {
       onSubmit: z.object({
-        email: z.email("Invalid email address"),
-        password: z.string().min(8, "Password must be at least 8 characters"),
+        email: z.email("Неверный адрес электронной почты"),
+        password: z
+          .string()
+          .min(8, "Пароль должен содержать минимум 8 символов"),
       }),
     },
   });
@@ -56,7 +58,7 @@ export default function SignInForm({
 
   return (
     <div className="mx-auto mt-10 w-full max-w-md p-6">
-      <h1 className="mb-6 text-center font-bold text-3xl">Welcome Back</h1>
+      <h1 className="mb-6 text-center font-bold text-3xl">С возвращением</h1>
 
       <form
         className="space-y-4"
@@ -70,7 +72,7 @@ export default function SignInForm({
           <form.Field name="email">
             {(field) => (
               <div className="space-y-2">
-                <Label htmlFor={field.name}>Email</Label>
+                <Label htmlFor={field.name}>Эл. почта</Label>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -93,7 +95,7 @@ export default function SignInForm({
           <form.Field name="password">
             {(field) => (
               <div className="space-y-2">
-                <Label htmlFor={field.name}>Password</Label>
+                <Label htmlFor={field.name}>Пароль</Label>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -119,7 +121,7 @@ export default function SignInForm({
               disabled={!state.canSubmit || state.isSubmitting}
               type="submit"
             >
-              {state.isSubmitting ? "Submitting..." : "Sign In"}
+              {state.isSubmitting ? "Вход..." : "Войти"}
             </Button>
           )}
         </form.Subscribe>
@@ -131,7 +133,7 @@ export default function SignInForm({
           onClick={onSwitchToSignUp}
           variant="link"
         >
-          Need an account? Sign Up
+          Нет аккаунта? Зарегистрироваться
         </Button>
       </div>
     </div>

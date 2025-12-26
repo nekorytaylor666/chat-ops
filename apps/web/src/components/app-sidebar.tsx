@@ -4,7 +4,6 @@ import { Link } from "@tanstack/react-router";
 import {
   BarChart2,
   Bell,
-  Briefcase,
   Building2,
   CheckSquare,
   ChevronDown,
@@ -35,27 +34,22 @@ import {
   SidebarMenuItem,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { useEntities } from "@/hooks/use-entities";
 
 const mainNavItems = [
-  { icon: Bell, label: "Notifications", to: "/" },
-  { icon: CheckSquare, label: "Tasks", to: "/", badge: 1 },
-  { icon: BarChart2, label: "Reports", to: "/" },
+  { icon: Bell, label: "Уведомления", to: "/" },
+  { icon: CheckSquare, label: "Задачи", to: "/", badge: 1 },
+  { icon: BarChart2, label: "Отчёты", to: "/" },
 ];
 
 const automationItems = [
-  { icon: Zap, label: "Sequences", to: "/" },
-  { icon: Workflow, label: "Workflows", to: "/" },
-];
-
-const recordItems = [
-  { icon: Building2, label: "Companies", to: "/" },
-  { icon: Users, label: "People", to: "/" },
-  { icon: Briefcase, label: "Deals", to: "/" },
-  { icon: Users, label: "Users", to: "/" },
-  { icon: Building2, label: "Workspaces", to: "/" },
+  { icon: Zap, label: "Последовательности", to: "/" },
+  { icon: Workflow, label: "Рабочие процессы", to: "/" },
 ];
 
 export function AppSidebar() {
+  const { data: entities } = useEntities();
+
   return (
     <Sidebar>
       <SidebarHeader className="flex h-12 flex-row items-center justify-between border-b px-2">
@@ -80,7 +74,7 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton className="w-full justify-start gap-2 text-muted-foreground">
                   <Search className="size-3" />
-                  <span>Quick actions</span>
+                  <span>Быстрые действия</span>
                   <kbd className="ml-auto rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px]">
                     K
                   </kbd>
@@ -112,7 +106,7 @@ export function AppSidebar() {
           <SidebarGroup>
             <SidebarGroupLabel asChild>
               <CollapsibleTrigger className="flex w-full items-center">
-                Automations
+                Автоматизации
                 <ChevronDown className="ml-auto size-3 transition-transform group-data-[state=open]/collapsible:rotate-180" />
               </CollapsibleTrigger>
             </SidebarGroupLabel>
@@ -140,7 +134,7 @@ export function AppSidebar() {
             <SidebarGroupLabel asChild>
               <CollapsibleTrigger className="flex w-full items-center">
                 <Star className="mr-2 size-3 text-muted-foreground" />
-                Favorites
+                Избранное
                 <ChevronDown className="ml-auto size-3 transition-transform group-data-[state=open]/collapsible:rotate-180" />
               </CollapsibleTrigger>
             </SidebarGroupLabel>
@@ -149,7 +143,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton className="text-muted-foreground">
-                      <span>No favorites</span>
+                      <span>Нет избранного</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </SidebarMenu>
@@ -162,23 +156,36 @@ export function AppSidebar() {
           <SidebarGroup>
             <SidebarGroupLabel asChild>
               <CollapsibleTrigger className="flex w-full items-center">
-                Records
+                Записи
                 <ChevronDown className="ml-auto size-3 transition-transform group-data-[state=open]/collapsible:rotate-180" />
               </CollapsibleTrigger>
             </SidebarGroupLabel>
             <CollapsibleContent>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {recordItems.map((item) => (
-                    <SidebarMenuItem key={item.label}>
+                  {entities?.map((entity) => (
+                    <SidebarMenuItem key={entity.id}>
                       <SidebarMenuButton asChild>
-                        <Link to={item.to}>
-                          <item.icon className="size-3 text-muted-foreground" />
-                          <span>{item.label}</span>
+                        <Link
+                          params={{ entitySlug: entity.slug }}
+                          to="/entities/$entitySlug"
+                        >
+                          <Building2 className="size-3 text-muted-foreground" />
+                          <span>{entity.pluralName}</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
+                  {(!entities || entities.length === 0) && (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild>
+                        <Link to="/entities">
+                          <Plus className="size-3 text-muted-foreground" />
+                          <span>Создать сущность</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )}
                 </SidebarMenu>
               </SidebarGroupContent>
             </CollapsibleContent>
@@ -190,7 +197,7 @@ export function AppSidebar() {
             <SidebarGroupLabel asChild>
               <CollapsibleTrigger className="flex w-full items-center">
                 <List className="mr-2 size-3" />
-                Lists
+                Списки
                 <ChevronDown className="ml-auto size-3 transition-transform group-data-[state=open]/collapsible:rotate-180" />
               </CollapsibleTrigger>
             </SidebarGroupLabel>
@@ -200,7 +207,7 @@ export function AppSidebar() {
                   <SidebarMenuItem>
                     <SidebarMenuButton>
                       <Plus className="size-3 text-muted-foreground" />
-                      <span>New list</span>
+                      <span>Новый список</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </SidebarMenu>
@@ -219,7 +226,7 @@ export function AppSidebar() {
                   <div className="h-full w-[43%] rounded-full bg-primary" />
                 </div>
                 <span className="text-muted-foreground text-xs">
-                  Getting started 43%
+                  Начало работы 43%
                 </span>
               </div>
             </SidebarMenuButton>
@@ -227,7 +234,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton>
               <Users className="size-3 text-muted-foreground" />
-              <span>Invite team members</span>
+              <span>Пригласить команду</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

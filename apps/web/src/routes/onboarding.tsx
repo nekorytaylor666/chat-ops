@@ -29,7 +29,7 @@ function OnboardingComponent() {
       });
 
       if (result.error) {
-        toast.error(result.error.message || "Failed to create organization");
+        toast.error(result.error.message || "Не удалось создать организацию");
         return;
       }
 
@@ -38,18 +38,18 @@ function OnboardingComponent() {
         organizationId: result.data.id,
       });
 
-      toast.success("Organization created successfully");
+      toast.success("Организация успешно создана");
       navigate({ to: "/" });
     },
     validators: {
       onSubmit: z.object({
-        name: z.string().min(2, "Name must be at least 2 characters"),
+        name: z.string().min(2, "Название должно содержать минимум 2 символа"),
         slug: z
           .string()
-          .min(2, "Slug must be at least 2 characters")
+          .min(2, "URL-адрес должен содержать минимум 2 символа")
           .regex(
             /^[a-z0-9-]+$/,
-            "Slug can only contain lowercase letters, numbers, and hyphens"
+            "URL-адрес может содержать только строчные буквы, цифры и дефисы"
           ),
       }),
     },
@@ -82,9 +82,9 @@ function OnboardingComponent() {
     <div className="flex min-h-screen items-center justify-center">
       <div className="mx-auto w-full max-w-md p-6">
         <div className="mb-8 text-center">
-          <h1 className="mb-2 font-bold text-3xl">Welcome!</h1>
+          <h1 className="mb-2 font-bold text-3xl">Добро пожаловать!</h1>
           <p className="text-muted-foreground">
-            Create your first organization to get started.
+            Создайте свою первую организацию, чтобы начать работу.
           </p>
         </div>
 
@@ -99,13 +99,13 @@ function OnboardingComponent() {
           <form.Field name="name">
             {(field) => (
               <div className="space-y-2">
-                <Label htmlFor={field.name}>Organization Name</Label>
+                <Label htmlFor={field.name}>Название организации</Label>
                 <Input
                   id={field.name}
                   name={field.name}
                   onBlur={field.handleBlur}
                   onChange={(e) => handleNameChange(e.target.value)}
-                  placeholder="My Company"
+                  placeholder="Моя компания"
                   value={field.state.value}
                 />
                 {field.state.meta.errors.map((error) => (
@@ -120,17 +120,17 @@ function OnboardingComponent() {
           <form.Field name="slug">
             {(field) => (
               <div className="space-y-2">
-                <Label htmlFor={field.name}>URL Slug</Label>
+                <Label htmlFor={field.name}>URL-адрес</Label>
                 <Input
                   id={field.name}
                   name={field.name}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="my-company"
+                  placeholder="moya-kompaniya"
                   value={field.state.value}
                 />
                 <p className="text-muted-foreground text-xs">
-                  This will be used in URLs for your organization.
+                  Это будет использоваться в ссылках на вашу организацию.
                 </p>
                 {field.state.meta.errors.map((error) => (
                   <p className="text-red-500 text-sm" key={error?.message}>
@@ -148,7 +148,7 @@ function OnboardingComponent() {
                 disabled={!state.canSubmit || state.isSubmitting}
                 type="submit"
               >
-                {state.isSubmitting ? "Creating..." : "Create Organization"}
+                {state.isSubmitting ? "Создание..." : "Создать организацию"}
               </Button>
             )}
           </form.Subscribe>

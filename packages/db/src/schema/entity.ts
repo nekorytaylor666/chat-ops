@@ -20,6 +20,8 @@ export const attributeTypeEnum = pgEnum("attribute_type", [
   "checkbox",
   "date",
   "url",
+  "relation",
+  "relation-multi",
 ]);
 
 export const entityDefinition = pgTable(

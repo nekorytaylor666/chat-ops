@@ -204,7 +204,7 @@ export function DataGridFilterMenu<TData>({
             variant="outline"
           >
             <ListFilter className="text-muted-foreground" />
-            Filter
+            Фильтр
             {columnFilters.length > 0 && (
               <Badge
                 className="h-[18.24px] rounded-[3.2px] px-[5.12px] font-mono font-normal text-[10.4px]"
@@ -227,7 +227,9 @@ export function DataGridFilterMenu<TData>({
         >
           <div className="flex flex-col gap-1">
             <h4 className="font-medium leading-none" id={labelId}>
-              {columnFilters.length > 0 ? "Filter by" : "No filters applied"}
+              {columnFilters.length > 0
+                ? "Фильтровать по"
+                : "Фильтры не применены"}
             </h4>
             <p
               className={cn(
@@ -237,8 +239,8 @@ export function DataGridFilterMenu<TData>({
               id={descriptionId}
             >
               {columnFilters.length > 0
-                ? "Modify filters to narrow down your data."
-                : "Add filters to narrow down your data."}
+                ? "Измените фильтры для уточнения данных."
+                : "Добавьте фильтры для уточнения данных."}
             </p>
           </div>
           {columnFilters.length > 0 && (
@@ -273,7 +275,7 @@ export function DataGridFilterMenu<TData>({
               ref={addButtonRef}
               size="sm"
             >
-              Add filter
+              Добавить фильтр
             </Button>
             {columnFilters.length > 0 && (
               <Button
@@ -282,7 +284,7 @@ export function DataGridFilterMenu<TData>({
                 size="sm"
                 variant="outline"
               >
-                Reset filters
+                Сбросить фильтры
               </Button>
             )}
           </div>
@@ -415,9 +417,9 @@ function DataGridFilterItem<TData>({
       >
         <div className="min-w-[72px] text-center">
           {index === 0 ? (
-            <span className="text-muted-foreground text-sm">Where</span>
+            <span className="text-muted-foreground text-sm">Где</span>
           ) : (
-            <span className="text-muted-foreground text-sm">And</span>
+            <span className="text-muted-foreground text-sm">И</span>
           )}
         </div>
         <Popover onOpenChange={setShowFieldSelector} open={showFieldSelector}>
@@ -441,9 +443,9 @@ function DataGridFilterItem<TData>({
             id={fieldListboxId}
           >
             <Command>
-              <CommandInput placeholder="Search fields..." />
+              <CommandInput placeholder="Поиск полей..." />
               <CommandList>
-                <CommandEmpty>No fields found.</CommandEmpty>
+                <CommandEmpty>Поля не найдены.</CommandEmpty>
                 <CommandGroup>
                   {columns.map((column) => (
                     <CommandItem
@@ -567,7 +569,7 @@ function DataGridFilterInput<TData>({
   variant,
   operator,
   dir,
-  placeholder = "Value",
+  placeholder = "Значение",
   value,
   endValue,
   column,
@@ -620,7 +622,7 @@ function DataGridFilterInput<TData>({
               setLocalValue(newValue);
               debouncedOnChange(newValue);
             }}
-            placeholder="Start"
+            placeholder="Начало"
             type="number"
             value={(localValue as number | undefined) ?? ""}
           />
@@ -634,7 +636,7 @@ function DataGridFilterInput<TData>({
               setLocalEndValue(newValue);
               debouncedOnEndValueChange(newValue);
             }}
-            placeholder="End"
+            placeholder="Конец"
             type="number"
             value={(localEndValue as number | undefined) ?? ""}
           />
@@ -683,7 +685,7 @@ function DataGridFilterInput<TData>({
           ? `${formatDate(startDate, { month: "short" })} - ${formatDate(endDate, { month: "short" })}`
           : startDate
             ? formatDate(startDate, { month: "short" })
-            : "Pick a range";
+            : "Выберите диапазон";
 
       return (
         <Popover onOpenChange={setShowValueSelector} open={showValueSelector}>
@@ -759,7 +761,7 @@ function DataGridFilterInput<TData>({
             <span className="truncate">
               {dateValue
                 ? formatDate(dateValue, { month: "short" })
-                : "Pick a date"}
+                : "Выберите дату"}
             </span>
           </Button>
         </PopoverTrigger>
@@ -835,7 +837,7 @@ function DataGridFilterInput<TData>({
                   )}
                   <span className="truncate">
                     {selectedOptions.length > 1
-                      ? `${selectedOptions.length} selected`
+                      ? `${selectedOptions.length} выбрано`
                       : selectedOptions[0]?.label}
                   </span>
                 </>
@@ -849,9 +851,9 @@ function DataGridFilterInput<TData>({
             id={inputListboxId}
           >
             <Command>
-              <CommandInput placeholder="Search options..." />
+              <CommandInput placeholder="Поиск опций..." />
               <CommandList>
-                <CommandEmpty>No options found.</CommandEmpty>
+                <CommandEmpty>Опции не найдены.</CommandEmpty>
                 <CommandGroup>
                   {selectOptions.map((option) => {
                     const isSelected = selectedValues.includes(option.value);
@@ -924,9 +926,9 @@ function DataGridFilterInput<TData>({
           id={inputListboxId}
         >
           <Command>
-            <CommandInput placeholder="Search options..." />
+            <CommandInput placeholder="Поиск опций..." />
             <CommandList>
-              <CommandEmpty>No options found.</CommandEmpty>
+              <CommandEmpty>Опции не найдены.</CommandEmpty>
               <CommandGroup>
                 {selectOptions.map((option) => (
                   <CommandItem
@@ -972,7 +974,7 @@ function DataGridFilterInput<TData>({
             setLocalValue(newValue);
             debouncedOnChange(newValue);
           }}
-          placeholder="Start"
+          placeholder="Начало"
           type="text"
           value={(localValue as string | undefined) ?? ""}
         />
@@ -985,7 +987,7 @@ function DataGridFilterInput<TData>({
             setLocalEndValue(newValue);
             debouncedOnEndValueChange(newValue);
           }}
-          placeholder="End"
+          placeholder="Конец"
           type="text"
           value={(localEndValue as string | undefined) ?? ""}
         />

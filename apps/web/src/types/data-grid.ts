@@ -47,6 +47,20 @@ export type CellOpts =
       maxFiles?: number;
       accept?: string;
       multiple?: boolean;
+    }
+  | {
+      variant: "relation";
+      targetEntityId: string;
+      targetEntitySlug: string;
+    }
+  | {
+      variant: "relation-multi";
+      targetEntityId: string;
+      targetEntitySlug: string;
+    }
+  | {
+      variant: "record-link";
+      entitySlug: string;
     };
 
 export interface UpdateCell {

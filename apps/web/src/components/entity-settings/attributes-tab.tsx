@@ -6,6 +6,7 @@ import {
   GripVertical,
   Hash,
   Link,
+  Link2,
   List,
   MoreHorizontal,
   Pencil,
@@ -40,7 +41,9 @@ type AttributeType =
   | "multi-select"
   | "checkbox"
   | "date"
-  | "url";
+  | "url"
+  | "relation"
+  | "relation-multi";
 
 interface Attribute {
   id: string;
@@ -76,17 +79,21 @@ const TYPE_ICONS: Record<AttributeType, React.ElementType> = {
   select: ChevronDown,
   "multi-select": List,
   url: Link,
+  relation: Link2,
+  "relation-multi": Link2,
 };
 
 const TYPE_LABELS: Record<AttributeType, string> = {
-  "short-text": "Text",
-  "long-text": "Long Text",
-  number: "Number",
-  checkbox: "Checkbox",
-  date: "Date",
-  select: "Select",
-  "multi-select": "Multi-select",
+  "short-text": "Текст",
+  "long-text": "Длинный текст",
+  number: "Число",
+  checkbox: "Чекбокс",
+  date: "Дата",
+  select: "Выбор",
+  "multi-select": "Множественный выбор",
   url: "URL",
+  relation: "Связь",
+  "relation-multi": "Множественная связь",
 };
 
 interface AttributesTabProps {
@@ -173,14 +180,14 @@ export function AttributesTab({ entity }: AttributesTabProps) {
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h2 className="font-semibold text-lg">Attributes</h2>
+          <h2 className="font-semibold text-lg">Атрибуты</h2>
           <p className="text-muted-foreground text-sm">
-            Modify and add object attributes
+            Изменяйте и добавляйте атрибуты объекта
           </p>
         </div>
         <Button onClick={handleCreateAttribute}>
           <Plus className="size-4" />
-          Create attribute
+          Создать атрибут
         </Button>
       </div>
 
@@ -190,7 +197,7 @@ export function AttributesTab({ entity }: AttributesTabProps) {
         <Input
           className="pl-9"
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search attributes"
+          placeholder="Поиск атрибутов"
           value={searchQuery}
         />
       </div>
@@ -201,10 +208,10 @@ export function AttributesTab({ entity }: AttributesTabProps) {
           <thead className="sticky top-0 bg-muted/50">
             <tr className="border-b text-left text-muted-foreground text-sm">
               <th className="w-8 px-2 py-3" />
-              <th className="px-4 py-3 font-medium">Name</th>
-              <th className="px-4 py-3 font-medium">Type</th>
-              <th className="px-4 py-3 font-medium">Constraints</th>
-              <th className="px-4 py-3 font-medium">Properties</th>
+              <th className="px-4 py-3 font-medium">Название</th>
+              <th className="px-4 py-3 font-medium">Тип</th>
+              <th className="px-4 py-3 font-medium">Ограничения</th>
+              <th className="px-4 py-3 font-medium">Свойства</th>
               <th className="w-12 px-2 py-3" />
             </tr>
           </thead>
@@ -241,15 +248,17 @@ export function AttributesTab({ entity }: AttributesTabProps) {
                   <td className="px-4 py-3">
                     <div className="flex gap-1">
                       {attr.isRequired && (
-                        <Badge variant="secondary">Required</Badge>
+                        <Badge variant="secondary">Обязательный</Badge>
                       )}
                       {attr.isUnique && (
-                        <Badge variant="secondary">Unique</Badge>
+                        <Badge variant="secondary">Уникальный</Badge>
                       )}
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    {attr.isSystem && <Badge variant="outline">System</Badge>}
+                    {attr.isSystem && (
+                      <Badge variant="outline">Системный</Badge>
+                    )}
                   </td>
                   <td className="px-2 py-3">
                     <DropdownMenu>
@@ -264,7 +273,7 @@ export function AttributesTab({ entity }: AttributesTabProps) {
                           onClick={() => handleEditAttribute(attr)}
                         >
                           <Pencil className="size-4" />
-                          Edit
+                          Редактировать
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
@@ -273,7 +282,7 @@ export function AttributesTab({ entity }: AttributesTabProps) {
                           variant="destructive"
                         >
                           <Trash2 className="size-4" />
-                          Delete
+                          Удалить
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -288,8 +297,8 @@ export function AttributesTab({ entity }: AttributesTabProps) {
                   colSpan={6}
                 >
                   {searchQuery
-                    ? "No attributes match your search"
-                    : "No attributes yet"}
+                    ? "Нет атрибутов, соответствующих поиску"
+                    : "Пока нет атрибутов"}
                 </td>
               </tr>
             )}

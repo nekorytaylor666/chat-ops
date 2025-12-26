@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import {
   AlignLeft,
   Calendar,
@@ -5,6 +6,7 @@ import {
   ChevronDown,
   Hash,
   Link,
+  Link2,
   List,
   Loader2,
   Plus,
@@ -31,10 +33,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useOrganizationContext } from "@/contexts/workspace-context";
 import {
   useAddAttribute,
   useUpdateAttribute,
 } from "@/hooks/use-entity-mutations";
+import { useTRPC } from "@/utils/trpc";
 
 type AttributeType =
   | "short-text"
@@ -44,10 +48,14 @@ type AttributeType =
   | "multi-select"
   | "checkbox"
   | "date"
-  | "url";
+  | "url"
+  | "relation"
+  | "relation-multi";
 
-interface SelectConfig {
+interface AttributeConfig {
   options?: Array<{ label: string; value: string }>;
+  targetEntityId?: string;
+  targetEntitySlug?: string;
 }
 
 interface Attribute {
@@ -60,7 +68,13 @@ interface Attribute {
   isUnique: boolean;
   isSystem: boolean;
   order: number;
-  config?: SelectConfig | null;
+  config?: AttributeConfig | null;
+}
+
+interface EntityOption {
+  id: string;
+  slug: string;
+  singularName: string;
 }
 
 const ATTRIBUTE_TYPES: {
@@ -68,14 +82,16 @@ const ATTRIBUTE_TYPES: {
   label: string;
   icon: React.ElementType;
 }[] = [
-  { value: "short-text", label: "Text", icon: Type },
-  { value: "long-text", label: "Long Text", icon: AlignLeft },
-  { value: "number", label: "Number", icon: Hash },
-  { value: "checkbox", label: "Checkbox", icon: CheckSquare },
-  { value: "date", label: "Date", icon: Calendar },
-  { value: "select", label: "Select", icon: ChevronDown },
-  { value: "multi-select", label: "Multi-select", icon: List },
+  { value: "short-text", label: "Текст", icon: Type },
+  { value: "long-text", label: "Длинный текст", icon: AlignLeft },
+  { value: "number", label: "Число", icon: Hash },
+  { value: "checkbox", label: "Чекбокс", icon: CheckSquare },
+  { value: "date", label: "Дата", icon: Calendar },
+  { value: "select", label: "Выбор", icon: ChevronDown },
+  { value: "multi-select", label: "Множественный выбор", icon: List },
   { value: "url", label: "URL", icon: Link },
+  { value: "relation", label: "Связь", icon: Link2 },
+  { value: "relation-multi", label: "Множественная связь", icon: Link2 },
 ];
 
 interface AttributeModalProps {
@@ -83,6 +99,8 @@ interface AttributeModalProps {
   onOpenChange: (open: boolean) => void;
   entityId: string;
   attribute?: Attribute;
+  defaultType?: AttributeType;
+  entities?: EntityOption[];
 }
 
 export function AttributeModal({
@@ -90,7 +108,10 @@ export function AttributeModal({
   onOpenChange,
   entityId,
   attribute,
+  defaultType = "short-text",
 }: AttributeModalProps) {
+  const trpc = useTRPC();
+  const { organizationId } = useOrganizationContext();
   const addAttribute = useAddAttribute();
   const updateAttribute = useUpdateAttribute();
 
@@ -99,6 +120,19 @@ export function AttributeModal({
   const [type, setType] = React.useState<AttributeType>(
     attribute?.type ?? "short-text"
   );
+
+  // Fetch entities for relation type selector
+  const needsTargetEntityFetch =
+    type === "relation" || type === "relation-multi";
+  const { data: entitiesData } = useQuery(
+    trpc.entity.list.queryOptions(
+      { organizationId: organizationId ?? "" },
+      {
+        enabled: open && needsTargetEntityFetch && !!organizationId,
+      }
+    )
+  );
+  const entities: EntityOption[] = entitiesData ?? [];
   const [name, setName] = React.useState(attribute?.name ?? "");
   const [description, setDescription] = React.useState(
     attribute?.description ?? ""
@@ -110,18 +144,22 @@ export function AttributeModal({
   const [options, setOptions] = React.useState<string[]>(
     attribute?.config?.options?.map((o) => o.label) ?? [""]
   );
+  const [targetEntityId, setTargetEntityId] = React.useState(
+    attribute?.config?.targetEntityId ?? ""
+  );
 
   // Reset form when modal opens/closes or attribute changes
   React.useEffect(() => {
     if (open) {
-      setType(attribute?.type ?? "short-text");
+      setType(attribute?.type ?? defaultType);
       setName(attribute?.name ?? "");
       setDescription(attribute?.description ?? "");
       setIsRequired(attribute?.isRequired ?? false);
       setIsUnique(attribute?.isUnique ?? false);
       setOptions(attribute?.config?.options?.map((o) => o.label) ?? [""]);
+      setTargetEntityId(attribute?.config?.targetEntityId ?? "");
     }
-  }, [open, attribute]);
+  }, [open, attribute, defaultType]);
 
   const isPending = addAttribute.isPending || updateAttribute.isPending;
 
@@ -129,6 +167,11 @@ export function AttributeModal({
     e.preventDefault();
 
     if (!name.trim()) return;
+
+    const needsTargetEntity = type === "relation" || type === "relation-multi";
+    if (needsTargetEntity && !targetEntityId) return;
+
+    const targetEntity = entities.find((e) => e.id === targetEntityId);
 
     const config =
       type === "select" || type === "multi-select"
@@ -140,7 +183,12 @@ export function AttributeModal({
                 value: o.toLowerCase().replace(/\s+/g, "-"),
               })),
           }
-        : undefined;
+        : needsTargetEntity
+          ? {
+              targetEntityId,
+              targetEntitySlug: targetEntity?.slug,
+            }
+          : undefined;
 
     if (isEditing && attribute) {
       updateAttribute.mutate(
@@ -191,21 +239,23 @@ export function AttributeModal({
   };
 
   const needsOptions = type === "select" || type === "multi-select";
+  const needsTargetEntity = type === "relation" || type === "relation-multi";
   const TypeIcon = ATTRIBUTE_TYPES.find((t) => t.value === type)?.icon ?? Type;
+  const availableEntities = entities.filter((e) => e.id !== entityId);
 
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? "Edit attribute" : "Create attribute"}
+            {isEditing ? "Редактировать атрибут" : "Создать атрибут"}
           </DialogTitle>
         </DialogHeader>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           {/* Attribute Type */}
           <div className="space-y-2">
-            <Label>Attribute Type</Label>
+            <Label>Тип атрибута</Label>
             <Select
               disabled={isEditing}
               onValueChange={(v) => setType(v as AttributeType)}
@@ -232,12 +282,12 @@ export function AttributeModal({
 
           {/* Name */}
           <div className="space-y-2">
-            <Label htmlFor="attr-name">Name</Label>
+            <Label htmlFor="attr-name">Название</Label>
             <Input
               autoFocus
               id="attr-name"
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Email Address"
+              placeholder="напр., Адрес электронной почты"
               value={name}
             />
           </div>
@@ -245,13 +295,13 @@ export function AttributeModal({
           {/* Description */}
           <div className="space-y-2">
             <Label htmlFor="attr-desc">
-              Description{" "}
-              <span className="text-muted-foreground">(optional)</span>
+              Описание{" "}
+              <span className="text-muted-foreground">(необязательно)</span>
             </Label>
             <Textarea
               id="attr-desc"
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Add a description for this attribute"
+              placeholder="Добавьте описание для этого атрибута"
               rows={2}
               value={description}
             />
@@ -260,7 +310,7 @@ export function AttributeModal({
           {/* Options for Select/Multi-select */}
           {needsOptions && (
             <div className="space-y-2">
-              <Label>Options</Label>
+              <Label>Опции</Label>
               <div className="space-y-2">
                 {options.map((option, index) => (
                   <div className="flex items-center gap-2" key={index}>
@@ -268,7 +318,7 @@ export function AttributeModal({
                       onChange={(e) =>
                         handleOptionChange(index, e.target.value)
                       }
-                      placeholder={`Option ${index + 1}`}
+                      placeholder={`Опция ${index + 1}`}
                       value={option}
                     />
                     <Button
@@ -291,29 +341,53 @@ export function AttributeModal({
                   variant="outline"
                 >
                   <Plus className="size-4" />
-                  Add option
+                  Добавить опцию
                 </Button>
               </div>
             </div>
           )}
 
+          {/* Target Entity for Relations */}
+          {needsTargetEntity && (
+            <div className="space-y-2">
+              <Label>Целевая сущность</Label>
+              <Select onValueChange={setTargetEntityId} value={targetEntityId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Выберите сущность..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableEntities.map((entity) => (
+                    <SelectItem key={entity.id} value={entity.id}>
+                      {entity.singularName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-muted-foreground text-xs">
+                {type === "relation"
+                  ? "Связь с одной записью из выбранной сущности"
+                  : "Связь с несколькими записями из выбранной сущности"}
+              </p>
+            </div>
+          )}
+
           {/* Constraints */}
           <div className="space-y-3">
-            <Label>Constraints</Label>
+            <Label>Ограничения</Label>
             <div className="flex flex-col gap-3">
               <label className="flex items-center gap-2">
                 <Checkbox
                   checked={isRequired}
                   onCheckedChange={(checked) => setIsRequired(checked === true)}
                 />
-                <span className="text-sm">Required</span>
+                <span className="text-sm">Обязательный</span>
               </label>
               <label className="flex items-center gap-2">
                 <Checkbox
                   checked={isUnique}
                   onCheckedChange={(checked) => setIsUnique(checked === true)}
                 />
-                <span className="text-sm">Unique</span>
+                <span className="text-sm">Уникальный</span>
               </label>
             </div>
           </div>
@@ -324,11 +398,18 @@ export function AttributeModal({
               type="button"
               variant="outline"
             >
-              Cancel
+              Отмена
             </Button>
-            <Button disabled={!name.trim() || isPending} type="submit">
+            <Button
+              disabled={
+                !name.trim() ||
+                isPending ||
+                (needsTargetEntity && !targetEntityId)
+              }
+              type="submit"
+            >
               {isPending && <Loader2 className="size-4 animate-spin" />}
-              {isEditing ? "Save changes" : "Create attribute"}
+              {isEditing ? "Сохранить изменения" : "Создать атрибут"}
             </Button>
           </DialogFooter>
         </form>
