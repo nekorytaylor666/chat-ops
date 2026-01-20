@@ -12,11 +12,14 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as EntitiesRouteRouteImport } from './routes/entities/route'
+import { Route as DealsRouteRouteImport } from './routes/deals/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EntitiesIndexRouteImport } from './routes/entities/index'
+import { Route as DealsIndexRouteImport } from './routes/deals/index'
 import { Route as EntitiesEntitySlugRouteRouteImport } from './routes/entities/$entitySlug/route'
 import { Route as EntitiesEntitySlugIndexRouteImport } from './routes/entities/$entitySlug/index'
 import { Route as EntitiesEntitySlugRecordIdRouteImport } from './routes/entities/$entitySlug/$recordId'
+import { Route as DealsDealIdStageIdRouteImport } from './routes/deals/$dealId.$stageId'
 import { Route as EntitiesEntitySlugSettingsRouteRouteImport } from './routes/entities/$entitySlug/settings/route'
 
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -34,6 +37,11 @@ const EntitiesRouteRoute = EntitiesRouteRouteImport.update({
   path: '/entities',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DealsRouteRoute = DealsRouteRouteImport.update({
+  id: '/deals',
+  path: '/deals',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -43,6 +51,11 @@ const EntitiesIndexRoute = EntitiesIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => EntitiesRouteRoute,
+} as any)
+const DealsIndexRoute = DealsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DealsRouteRoute,
 } as any)
 const EntitiesEntitySlugRouteRoute = EntitiesEntitySlugRouteRouteImport.update({
   id: '/$entitySlug',
@@ -60,6 +73,11 @@ const EntitiesEntitySlugRecordIdRoute =
     path: '/$recordId',
     getParentRoute: () => EntitiesEntitySlugRouteRoute,
   } as any)
+const DealsDealIdStageIdRoute = DealsDealIdStageIdRouteImport.update({
+  id: '/$dealId/$stageId',
+  path: '/$dealId/$stageId',
+  getParentRoute: () => DealsRouteRoute,
+} as any)
 const EntitiesEntitySlugSettingsRouteRoute =
   EntitiesEntitySlugSettingsRouteRouteImport.update({
     id: '/settings',
@@ -69,12 +87,15 @@ const EntitiesEntitySlugSettingsRouteRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/deals': typeof DealsRouteRouteWithChildren
   '/entities': typeof EntitiesRouteRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/entities/$entitySlug': typeof EntitiesEntitySlugRouteRouteWithChildren
+  '/deals/': typeof DealsIndexRoute
   '/entities/': typeof EntitiesIndexRoute
   '/entities/$entitySlug/settings': typeof EntitiesEntitySlugSettingsRouteRoute
+  '/deals/$dealId/$stageId': typeof DealsDealIdStageIdRoute
   '/entities/$entitySlug/$recordId': typeof EntitiesEntitySlugRecordIdRoute
   '/entities/$entitySlug/': typeof EntitiesEntitySlugIndexRoute
 }
@@ -82,20 +103,25 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/deals': typeof DealsIndexRoute
   '/entities': typeof EntitiesIndexRoute
   '/entities/$entitySlug/settings': typeof EntitiesEntitySlugSettingsRouteRoute
+  '/deals/$dealId/$stageId': typeof DealsDealIdStageIdRoute
   '/entities/$entitySlug/$recordId': typeof EntitiesEntitySlugRecordIdRoute
   '/entities/$entitySlug': typeof EntitiesEntitySlugIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/deals': typeof DealsRouteRouteWithChildren
   '/entities': typeof EntitiesRouteRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/entities/$entitySlug': typeof EntitiesEntitySlugRouteRouteWithChildren
+  '/deals/': typeof DealsIndexRoute
   '/entities/': typeof EntitiesIndexRoute
   '/entities/$entitySlug/settings': typeof EntitiesEntitySlugSettingsRouteRoute
+  '/deals/$dealId/$stageId': typeof DealsDealIdStageIdRoute
   '/entities/$entitySlug/$recordId': typeof EntitiesEntitySlugRecordIdRoute
   '/entities/$entitySlug/': typeof EntitiesEntitySlugIndexRoute
 }
@@ -103,12 +129,15 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/deals'
     | '/entities'
     | '/login'
     | '/onboarding'
     | '/entities/$entitySlug'
+    | '/deals/'
     | '/entities/'
     | '/entities/$entitySlug/settings'
+    | '/deals/$dealId/$stageId'
     | '/entities/$entitySlug/$recordId'
     | '/entities/$entitySlug/'
   fileRoutesByTo: FileRoutesByTo
@@ -116,25 +145,31 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/onboarding'
+    | '/deals'
     | '/entities'
     | '/entities/$entitySlug/settings'
+    | '/deals/$dealId/$stageId'
     | '/entities/$entitySlug/$recordId'
     | '/entities/$entitySlug'
   id:
     | '__root__'
     | '/'
+    | '/deals'
     | '/entities'
     | '/login'
     | '/onboarding'
     | '/entities/$entitySlug'
+    | '/deals/'
     | '/entities/'
     | '/entities/$entitySlug/settings'
+    | '/deals/$dealId/$stageId'
     | '/entities/$entitySlug/$recordId'
     | '/entities/$entitySlug/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DealsRouteRoute: typeof DealsRouteRouteWithChildren
   EntitiesRouteRoute: typeof EntitiesRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
@@ -163,6 +198,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EntitiesRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/deals': {
+      id: '/deals'
+      path: '/deals'
+      fullPath: '/deals'
+      preLoaderRoute: typeof DealsRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -176,6 +218,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/entities/'
       preLoaderRoute: typeof EntitiesIndexRouteImport
       parentRoute: typeof EntitiesRouteRoute
+    }
+    '/deals/': {
+      id: '/deals/'
+      path: '/'
+      fullPath: '/deals/'
+      preLoaderRoute: typeof DealsIndexRouteImport
+      parentRoute: typeof DealsRouteRoute
     }
     '/entities/$entitySlug': {
       id: '/entities/$entitySlug'
@@ -198,6 +247,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EntitiesEntitySlugRecordIdRouteImport
       parentRoute: typeof EntitiesEntitySlugRouteRoute
     }
+    '/deals/$dealId/$stageId': {
+      id: '/deals/$dealId/$stageId'
+      path: '/$dealId/$stageId'
+      fullPath: '/deals/$dealId/$stageId'
+      preLoaderRoute: typeof DealsDealIdStageIdRouteImport
+      parentRoute: typeof DealsRouteRoute
+    }
     '/entities/$entitySlug/settings': {
       id: '/entities/$entitySlug/settings'
       path: '/settings'
@@ -207,6 +263,20 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface DealsRouteRouteChildren {
+  DealsIndexRoute: typeof DealsIndexRoute
+  DealsDealIdStageIdRoute: typeof DealsDealIdStageIdRoute
+}
+
+const DealsRouteRouteChildren: DealsRouteRouteChildren = {
+  DealsIndexRoute: DealsIndexRoute,
+  DealsDealIdStageIdRoute: DealsDealIdStageIdRoute,
+}
+
+const DealsRouteRouteWithChildren = DealsRouteRoute._addFileChildren(
+  DealsRouteRouteChildren,
+)
 
 interface EntitiesEntitySlugRouteRouteChildren {
   EntitiesEntitySlugSettingsRouteRoute: typeof EntitiesEntitySlugSettingsRouteRoute
@@ -242,6 +312,7 @@ const EntitiesRouteRouteWithChildren = EntitiesRouteRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DealsRouteRoute: DealsRouteRouteWithChildren,
   EntitiesRouteRoute: EntitiesRouteRouteWithChildren,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,

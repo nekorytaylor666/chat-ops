@@ -6,6 +6,7 @@ import {
   HeadContent,
   Outlet,
   Scripts,
+  useLocation,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
@@ -15,10 +16,10 @@ import { Toaster } from "@/components/ui/sonner";
 import { WorkspaceProvider } from "@/contexts/workspace-context";
 import Header, { PageHeaderProvider } from "../components/header";
 import appCss from "../index.css?url";
-export interface RouterAppContext {
+export type RouterAppContext = {
   trpc: TRPCOptionsProxy<AppRouter>;
   queryClient: QueryClient;
-}
+};
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   head: () => ({
@@ -46,6 +47,9 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 });
 
 function RootDocument() {
+  const pathname = useLocation({ select: (loc) => loc.pathname });
+  const isDealsRoute = pathname.startsWith("/deals");
+
   return (
     <html lang="en">
       <head>
@@ -53,17 +57,21 @@ function RootDocument() {
       </head>
       <body>
         <WorkspaceProvider>
-          <PageHeaderProvider>
-            <SidebarProvider>
-              <AppSidebar />
-              <SidebarInset>
-                <Header />
-                <main className="min-w-0 flex-1 overflow-auto">
-                  <Outlet />
-                </main>
-              </SidebarInset>
-            </SidebarProvider>
-          </PageHeaderProvider>
+          {isDealsRoute ? (
+            <Outlet />
+          ) : (
+            <PageHeaderProvider>
+              <SidebarProvider>
+                <AppSidebar />
+                <SidebarInset>
+                  <Header />
+                  <main className="min-w-0 flex-1 overflow-auto">
+                    <Outlet />
+                  </main>
+                </SidebarInset>
+              </SidebarProvider>
+            </PageHeaderProvider>
+          )}
         </WorkspaceProvider>
 
         <Toaster richColors />
