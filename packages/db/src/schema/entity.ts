@@ -22,6 +22,7 @@ export const attributeTypeEnum = pgEnum("attribute_type", [
   "url",
   "relation",
   "relation-multi",
+  "file",
 ]);
 
 export const entityDefinition = pgTable(

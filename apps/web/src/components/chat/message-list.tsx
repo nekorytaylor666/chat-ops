@@ -1,13 +1,15 @@
+import { Loader2 } from "lucide-react";
 import { useEffect, useRef } from "react";
-import { getMessagesForStage } from "@/lib/chat-mock-data";
+import { useChatMessages } from "@/hooks/use-chat-messages";
 import { MessageItem } from "./message-item";
 
 type MessageListProps = {
+  dealId: string;
   stageId: string;
 };
 
-export function MessageList({ stageId }: MessageListProps) {
-  const messages = getMessagesForStage(stageId);
+export function MessageList({ dealId, stageId }: MessageListProps) {
+  const { messages, isLoading } = useChatMessages(dealId, stageId);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -16,10 +18,18 @@ export function MessageList({ stageId }: MessageListProps) {
     }
   });
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   if (messages.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center text-muted-foreground">
-        No messages in this stage yet
+        Пока нет сообщений на этом этапе
       </div>
     );
   }

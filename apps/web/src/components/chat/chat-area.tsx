@@ -12,7 +12,7 @@ export function ChatArea({ deal, stage }: ChatAreaProps) {
   return (
     <div className="flex min-w-0 flex-1 flex-col border-r">
       <ChatHeader deal={deal} stage={stage} />
-      <MessageList stageId={stage.id} />
+      <MessageList dealId={deal.id} stageId={stage.id} />
       <MessageInput />
     </div>
   );

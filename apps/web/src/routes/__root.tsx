@@ -48,7 +48,9 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 
 function RootDocument() {
   const pathname = useLocation({ select: (loc) => loc.pathname });
-  const isDealsRoute = pathname.startsWith("/deals");
+  // Only the deals chat routes (/deals and /deals/$dealId/$stageId) use special layout
+  // /deals-board uses the standard layout with sidebar
+  const isDealsRoute = pathname === "/deals" || pathname.startsWith("/deals/");
 
   return (
     <html lang="en">
@@ -63,11 +65,11 @@ function RootDocument() {
             <PageHeaderProvider>
               <SidebarProvider>
                 <AppSidebar />
-                <SidebarInset>
+                <SidebarInset className="h-screen overflow-hidden">
                   <Header />
-                  <main className="min-w-0 flex-1 overflow-auto">
+                  <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
                     <Outlet />
-                  </main>
+                  </div>
                 </SidebarInset>
               </SidebarProvider>
             </PageHeaderProvider>

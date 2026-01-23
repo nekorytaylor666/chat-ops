@@ -9,9 +9,11 @@ function DealsIndex() {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 text-muted-foreground">
       <MessageSquare className="size-16 opacity-50" />
-      <h2 className="font-semibold text-lg">Select a deal to start chatting</h2>
+      <h2 className="font-semibold text-lg">
+        Выберите сделку для начала общения
+      </h2>
       <p className="text-sm">
-        Choose a deal from the sidebar to view the conversation
+        Выберите сделку из боковой панели для просмотра переписки
       </p>
     </div>
   );

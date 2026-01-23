@@ -44,7 +44,7 @@ const mainNavItems = [
 
 const automationItems = [
   { icon: Zap, label: "Последовательности", to: "/" },
-  { icon: Workflow, label: "Рабочие процессы", to: "/" },
+  { icon: Workflow, label: "Рабочие процессы", to: "/workflows" },
 ];
 
 export function AppSidebar() {
@@ -123,6 +123,39 @@ export function AppSidebar() {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </CollapsibleContent>
+          </SidebarGroup>
+        </Collapsible>
+
+        <Collapsible className="group/collapsible" defaultOpen>
+          <SidebarGroup>
+            <SidebarGroupLabel asChild>
+              <CollapsibleTrigger className="flex w-full items-center">
+                Сделки
+                <ChevronDown className="ml-auto size-3 transition-transform group-data-[state=open]/collapsible:rotate-180" />
+              </CollapsibleTrigger>
+            </SidebarGroupLabel>
+            <CollapsibleContent>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <Link to="/deals-board">
+                        <Building2 className="size-3 text-muted-foreground" />
+                        <span>Все сделки</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <Link to="/deals">
+                        <Building2 className="size-3 text-muted-foreground" />
+                        <span>Чат по сделкам</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarGroupContent>
             </CollapsibleContent>

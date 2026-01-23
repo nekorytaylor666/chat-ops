@@ -14,6 +14,7 @@
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "db:migrate": "drizzle-kit migrate",
+    "db:seed": "tsx src/seed.ts",
     "db:start": "docker compose up -d",
     "db:watch": "docker compose up",
     "db:stop": "docker compose stop",
@@ -22,6 +23,7 @@
   "devDependencies": {
     "drizzle-kit": "^0.31.8",
     "@types/pg": "catalog:",
+    "tsx": "^4.19.0",
     "typescript": "catalog:",
     "@chat-ops/config": "workspace:*"
   },

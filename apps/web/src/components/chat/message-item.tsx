@@ -14,18 +14,18 @@ function formatTimestamp(date: Date): string {
   );
 
   if (diffDays === 0) {
-    return `Today at ${date.toLocaleTimeString("en-US", {
+    return `Сегодня в ${date.toLocaleTimeString("ru-RU", {
       hour: "numeric",
       minute: "2-digit",
     })}`;
   }
   if (diffDays === 1) {
-    return `Yesterday at ${date.toLocaleTimeString("en-US", {
+    return `Вчера в ${date.toLocaleTimeString("ru-RU", {
       hour: "numeric",
       minute: "2-digit",
     })}`;
   }
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString("ru-RU", {
     month: "short",
     day: "numeric",
     hour: "numeric",

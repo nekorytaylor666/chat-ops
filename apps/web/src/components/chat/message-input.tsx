@@ -37,7 +37,7 @@ export function MessageInput() {
           className="max-h-32 min-h-10 resize-none"
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type a message..."
+          placeholder="Введите сообщение..."
           rows={1}
           value={message}
         />

@@ -1,13 +1,54 @@
 import { useParams } from "@tanstack/react-router";
-import { ChevronRight, User } from "lucide-react";
+import { ChevronRight, Loader2, User } from "lucide-react";
+import { useState } from "react";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { useChatDeal } from "@/hooks/use-chat-deals";
 import { cn } from "@/lib/utils";
-import type { Deal } from "@/types/chat";
+import type { Deal, Stage } from "@/types/chat";
 import { StageItem } from "./stage-item";
+
+function StagesContent({
+  stages,
+  isLoading,
+  dealId,
+  currentStageId,
+}: {
+  stages: Stage[];
+  isLoading: boolean;
+  dealId: string;
+  currentStageId: string | undefined;
+}) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-2">
+        <Loader2 className="size-4 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (stages.length === 0) {
+    return (
+      <div className="py-2 text-muted-foreground text-xs">Этапы недоступны</div>
+    );
+  }
+
+  return (
+    <>
+      {stages.map((stage) => (
+        <StageItem
+          dealId={dealId}
+          isActive={stage.id === currentStageId}
+          key={stage.id}
+          stage={stage}
+        />
+      ))}
+    </>
+  );
+}
 
 type DealItemProps = {
   deal: Deal;
@@ -17,9 +58,21 @@ type DealItemProps = {
 export function DealItem({ deal, isExpanded }: DealItemProps) {
   const params = useParams({ strict: false });
   const currentStageId = params.stageId;
+  const [isOpen, setIsOpen] = useState(isExpanded);
+
+  // Lazy-load full deal with stages when expanded
+  const { deal: fullDeal, isLoading } = useChatDeal(isOpen ? deal.id : "");
+
+  // Use stages from full deal if available, otherwise from prop
+  const stages = fullDeal?.stages ?? deal.stages;
 
   return (
-    <Collapsible className="group/deal" defaultOpen={isExpanded}>
+    <Collapsible
+      className="group/deal"
+      defaultOpen={isExpanded}
+      onOpenChange={setIsOpen}
+      open={isOpen}
+    >
       <CollapsibleTrigger
         className={cn(
           "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent",
@@ -45,14 +98,12 @@ export function DealItem({ deal, isExpanded }: DealItemProps) {
         </div>
       </CollapsibleTrigger>
       <CollapsibleContent className="mt-0.5 ml-5 space-y-0.5 border-l pl-2">
-        {deal.stages.map((stage) => (
-          <StageItem
-            dealId={deal.id}
-            isActive={stage.id === currentStageId}
-            key={stage.id}
-            stage={stage}
-          />
-        ))}
+        <StagesContent
+          currentStageId={currentStageId}
+          dealId={deal.id}
+          isLoading={isLoading}
+          stages={stages}
+        />
       </CollapsibleContent>
     </Collapsible>
   );
